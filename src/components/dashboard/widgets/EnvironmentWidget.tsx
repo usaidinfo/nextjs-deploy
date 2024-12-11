@@ -58,14 +58,17 @@ const EnvironmentWidget: React.FC<EnvironmentWidgetProps> = ({ sensorData, error
     {metrics.map((metric, index) => (
       <Card
       key={metric.label}
-      className={`w-full h-[110px] !bg-[rgba(24,24,27,0.5)] backdrop-blur-sm border ${
+      className={`w-full h-[110px] !bg-[rgba(24,24,27,0.2)] backdrop-blur-sm border ${
         borderColors[index % 4]
-      } rounded-xl`}
+      } !rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.1)]`}
       sx={{
-        backgroundColor: 'rgba(24,24,27,0.5) !important',
+        backgroundColor: 'rgba(24,24,27,0.2) !important',
+        borderRadius: '0.75rem !important',
+        boxShadow: '0 0 15px rgba(255,255,255,0.1) !important',
         backdropFilter: 'blur(8px)',
         '&.MuiCard-root': {
-          backgroundColor: 'rgba(24,24,27,0.5) !important',
+          backgroundColor: 'rgba(24,24,27,0.2) !important',
+          borderRadius: '0.75rem !important'
         }
       }}
     >
