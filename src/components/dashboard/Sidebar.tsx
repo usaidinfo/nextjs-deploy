@@ -1,0 +1,260 @@
+'use client';
+import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import AddIcon from '@mui/icons-material/Add';
+import HomeIcon from '@mui/icons-material/Home';
+import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
+import { locationService } from 'lib/services/location.service';
+import { plantService } from 'lib/services/plant.service';
+import type { Location } from 'lib/types/location';
+import type { Plant } from 'lib/types/plants';
+import { useRouter } from 'next/navigation';
+import CreateLocationModal from './modals/CreateLocationModal';
+import CreatePlantModal from './modals/CreatePlantModal';
+import { LocationSkeleton } from './skeletons/LocationSkeleton';
+import { PlantSkeleton } from './skeletons/PlantSkeleton';
+
+interface LocationPlants {
+  [key: string]: {
+    plants: Plant[];
+    isLoading: boolean;
+    error: string | null;
+  };
+}
+
+const Sidebar = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [locationPlants, setLocationPlants] = useState<LocationPlants>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreatePlantModal, setShowCreatePlantModal] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+
+
+    const fetchLocations = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await locationService.getLocations();
+
+        if (response.success && response.locations) {
+          setLocations(response.locations);
+        } else {
+          setError(response.message || 'Failed to fetch locations');
+        }
+      } catch (err) {
+        console.error('Error fetching locations:', err);
+        setError('Failed to load locations. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const handleLocationCreated = () => {
+    fetchLocations();
+  };
+
+  const fetchPlants = async (locationId: string) => {
+    try {
+      setLocationPlants(prev => ({
+        ...prev,
+        [locationId]: { plants: [], isLoading: true, error: null }
+      }));
+
+      const response = await plantService.getPlants(Number(locationId));
+
+      if (response.success) {
+        setLocationPlants(prev => ({
+          ...prev,
+          [locationId]: {
+            plants: response.plants,
+            isLoading: false,
+            error: null
+          }
+        }));
+      } else {
+        setLocationPlants(prev => ({
+          ...prev,
+          [locationId]: {
+            plants: [],
+            isLoading: false,
+            error: response.message || 'Failed to fetch plants'
+          }
+        }));
+      }
+    } catch (error) {
+      console.log("error while fetching plants: ", error)
+      setLocationPlants(prev => ({
+        ...prev,
+        [locationId]: {
+          plants: [],
+          isLoading: false,
+          error: 'Failed to load plants'
+        }
+      }));
+    }
+  };
+
+  const toggleLocation = async (locationId: string) => {
+    const isExpanding = expandedLocation !== locationId;
+    setExpandedLocation(isExpanding ? locationId : null);
+
+    if (isExpanding && !locationPlants[locationId]) {
+      await fetchPlants(locationId);
+    }
+  };
+
+  const handleLocationClick = (locationId: string) => {
+    router.push(`/dashboard/${locationId}`);
+    toggleLocation(locationId);
+  };
+
+  const handleAddLocation = () => {
+    setShowCreateModal(true);
+  };
+
+  const handleAddPlant = async (locationId: string) => {
+    setSelectedLocationId(locationId);
+    setShowCreatePlantModal(true);
+  };
+
+  useEffect(() => {
+    const handleLocationDeleted = () => {
+      fetchLocations();
+    };
+  
+    window.addEventListener('locationDeleted', handleLocationDeleted);
+      return () => {
+      window.removeEventListener('locationDeleted', handleLocationDeleted);
+    };
+  }, []);
+
+  return (
+    <div className="w-auto text-gray-300 h-auto my-8 mr-4 flex">
+      <div className="w-6 bg-gradient1" />
+      <div className="flex-1 p-4 border border-white/10 bg-[rgba(24,24,27,0.5)] rounded-3xl shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+        <div className="flex items-center justify-center border-b border-zinc-700/50 gap-2 mb-8">
+          <img src="/leafai-logo.png" alt="Leaf AI" className="w-24 h-18" />
+        </div>
+
+        <button
+          onClick={handleAddLocation}
+          className="w-full flex items-center justify-between font-sans font-semibold gap-2 px-4 py-3 mt-4 text-sm rounded-lg hover:bg-zinc-800/50 transition-colors text-slate-500"
+        >
+          <span>New Grow Location</span>
+          <AddIcon className="w-4 h-4" />
+        </button>
+
+        <nav className="mt-3 space-y-2">
+          {isLoading && (
+            <LocationSkeleton />
+          )}
+
+          {error && (
+            <div className="text-center py-4 mx-auto w-10/12 text-red-400">
+              {error}
+            </div>
+          )}
+
+          {!isLoading && !error && locations.length === 0 && (
+            <div className="text-center py-4 text-slate-400">
+              No locations found. Create your first location!
+            </div>
+          )}
+
+          {!isLoading && !error && locations.map((location) => (
+            <div key={location.location_id} className="space-y-1">
+              <button
+                onClick={() => handleLocationClick(location.location_id)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors
+                  ${pathname === `/dashboard/${location.location_id}`
+                    ? 'bg-white/10 text-white'
+                    : 'hover:bg-zinc-800/50 text-gray-300'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <HomeIcon className="w-4 h-4" />
+                  <span className="text-sm">{location.location_name}</span>
+                </div>
+                {expandedLocation === location.location_id ? (
+                  <ExpandLessIcon className="w-5 h-5" />
+                ) : (
+                  <ExpandMoreIcon className="w-5 h-5" />
+                )}
+              </button>
+
+              {expandedLocation === location.location_id && (
+                <div className="ml-6 space-y-1">
+                  {locationPlants[location.location_id]?.isLoading ? (
+                    <PlantSkeleton />
+                  ) : locationPlants[location.location_id]?.error ? (
+                    <div className="text-sm text-red-400 px-0 py-2">
+                      {locationPlants[location.location_id].error}
+                    </div>
+                  ) : (
+                    <>
+                          {locationPlants[location.location_id]?.plants?.map((plant: Plant) => (
+                            <button
+                              key={plant.plant_id}
+                              onClick={() => {
+                                window.dispatchEvent(new CustomEvent('plantSelected', {
+                                  detail: { plantId: plant.plant_id }
+                                }));
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-zinc-800/50 
+              transition-colors text-sm text-gray-300"
+                            >
+                              <LocalFloristIcon className="w-4 h-4" />
+                              <span>{plant.plant_name}</span>
+                            </button>
+                          ))}
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => handleAddPlant(location.location_id)}
+                    className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-zinc-800/50 transition-colors text-sm text-slate-500"
+                  >
+                    <AddIcon className="w-4 h-4" />
+                    Add Flower
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </nav>
+      </div>
+      <CreateLocationModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onLocationCreated={handleLocationCreated}
+      />
+      {selectedLocationId && (
+        <CreatePlantModal 
+        isOpen={showCreatePlantModal}
+        onClose={() => {
+          setShowCreatePlantModal(false);
+          setSelectedLocationId(null);
+        }}
+        onPlantCreated={() => {
+          if (selectedLocationId) {
+            fetchPlants(selectedLocationId);
+          }
+        }}
+        locationId={selectedLocationId || ''}
+      />
+      )}
+    </div>
+  );
+};
+
+export default Sidebar;
