@@ -12,6 +12,7 @@ import { plantService } from 'lib/services/plant.service';
 import { useAuth } from 'lib/hooks/useAuth';
 import type { Location } from 'lib/types/location';
 import { Plant } from 'lib/types/plants';
+import Image from 'next/image';
 
 interface Props {
   onClose: () => void;
@@ -91,11 +92,14 @@ export default function MobileSidebar({ onClose }: Props) {
   return (
     <div className="h-full flex flex-col py-6">
           <div className="px-4 border-b border-zinc-700/50 mb-4">
-              <img
-                  src="/leafai-logo.png"
-                  alt="Leaf AI"
-                  className="w-24 h-18"
-              />
+        <Image
+          src="/leafai-logo.png"
+          alt="Leaf AI"
+          width={96}  // w-24 equals 96px
+          height={72} // h-18 equals 72px
+          priority
+          className="object-contain"
+        />
           </div>
       <div className="flex-1 overflow-y-auto px-4">
         {isLoading ? (

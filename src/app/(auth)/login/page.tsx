@@ -2,6 +2,8 @@
 
 import LoginForm from '@components/auth/LoginForm';
 import '../../globals.css';
+import Image from 'next/image';
+
 
 export default function LoginPage() {
   return (
@@ -24,11 +26,15 @@ export default function LoginPage() {
 
       <div className="relative flex items-center justify-center bg-gradient"
       >
-        <img
+        <Image
           src="/leafai-logo.png"
           alt="Leaf AI Logo"
-          className="absolute top-0 right-4 w-24 h-24 object-contain rounded-xl opacity-50"
+          width={96}
+          height={96}
+          className="absolute top-0 right-4 object-contain rounded-xl mt-4 opacity-50"
+          priority
         />
+        
         
         <div className="absolute bottom-8 left-8 text-white/50 text-xs">
           © 2024, Made with ❤️ by Team Leaf AI

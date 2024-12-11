@@ -57,11 +57,18 @@ const EnvironmentWidget: React.FC<EnvironmentWidgetProps> = ({ sensorData, error
   <div className="grid grid-cols-1 sm:grid-cols-2 pb-8 gap-4 max-w-lg mx-auto">
     {metrics.map((metric, index) => (
       <Card
-        key={metric.label}
-        className={`w-full h-[110px] bg-[rgba(24,24,27,0.2)] backdrop-blur-sm border ${
-          borderColors[index % 4]
-        } rounded-xl`}
-      >
+      key={metric.label}
+      className={`w-full h-[110px] !bg-[rgba(24,24,27,0.5)] backdrop-blur-sm border ${
+        borderColors[index % 4]
+      } rounded-xl`}
+      sx={{
+        backgroundColor: 'rgba(24,24,27,0.5) !important',
+        backdropFilter: 'blur(8px)',
+        '&.MuiCard-root': {
+          backgroundColor: 'rgba(24,24,27,0.5) !important',
+        }
+      }}
+    >
         <CardContent className="h-full">
           <div className="flex gap-3 h-full">
             <div className="w-[71.4%] border-r border-white/10 pr-4">
