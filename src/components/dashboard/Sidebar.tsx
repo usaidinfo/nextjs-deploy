@@ -145,14 +145,14 @@ const Sidebar = () => {
       <div className="w-6 bg-gradient1" />
       <div className="flex-1 p-4 border border-white/10 bg-[rgba(24,24,27,0.5)] rounded-3xl shadow-[0_0_15px_rgba(255,255,255,0.1)]">
         <div className="flex items-center justify-center border-b border-zinc-700/50 gap-2 mb-8">
-        <Image 
-    src="/leafai-logo.png" 
-    alt="Leaf AI" 
-    width={96}  // w-24 equals 96px
-    height={72} // h-18 equals 72px
-    priority
-    className="object-contain"
-  />
+          <Image
+            src="/leafai-logo3.png"
+            alt="Leaf AI"
+            width={96}  // w-24 equals 96px
+            height={72} // h-18 equals 72px
+            priority
+            className="object-contain"
+          />
         </div>
 
         <button

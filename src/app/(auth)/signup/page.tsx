@@ -26,7 +26,7 @@ function SignUpPage() {
       <div className="relative flex items-center justify-center bg-gradient"
       >
         <Image
-          src="/leafai-logo.png"
+          src="/leafai-logo3.png"
           alt="Leaf AI Logo"
           width={96}
           height={96}

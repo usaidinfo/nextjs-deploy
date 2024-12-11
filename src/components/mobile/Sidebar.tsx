@@ -93,10 +93,10 @@ export default function MobileSidebar({ onClose }: Props) {
     <div className="h-full flex flex-col py-6">
           <div className="px-4 border-b border-zinc-700/50 mb-4">
         <Image
-          src="/leafai-logo.png"
+          src="/leafai-logo3.png"
           alt="Leaf AI"
-          width={96}  // w-24 equals 96px
-          height={72} // h-18 equals 72px
+          width={96} 
+          height={72}
           priority
           className="object-contain"
         />

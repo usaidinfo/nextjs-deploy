@@ -15,7 +15,7 @@ export default function NotFound() {
         
         <div className="relative bg-[rgba(24,24,27,0.7)] backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
           <img 
-            src="/leafai-logo.png" 
+            src="/leafai-logo3.png" 
             alt="Leaf AI" 
             className="w-24 mx-auto mb-6"
           />
