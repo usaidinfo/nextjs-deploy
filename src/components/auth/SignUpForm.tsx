@@ -94,6 +94,11 @@ export default function SignUpForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
     setIsLoading(true);
   
     try {
@@ -178,7 +183,7 @@ export default function SignUpForm() {
                           </div>
 
                           <div>
-                            <p className='text-red-500'>{error}</p>
+                            <p className='text-red-500 text-xs text-center'>{error}</p>
                           </div>
 
                           <div className='m-1'>
