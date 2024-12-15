@@ -115,21 +115,30 @@ class SensorsService {
 
   async validateQRData(qrData: string) {
     try {
-      const parsedData = JSON.parse(qrData);
-      
-      if (!parsedData.sn || !parsedData.type || !parsedData.model) {
-        return { isValid: false, error: 'Invalid QR code format' };
+      const url = new URL(qrData);
+      if (!url.hostname.includes('leafai')) {
+        return { isValid: false, error: 'Invalid device QR code' };
       }
-
-      const snValidation = await this.getSNInfo(parsedData.sn);
+  
+      const pathSegments = url.pathname.split('/').filter(Boolean);
+      const sn = pathSegments[pathSegments.length - 1];
+      if (!sn) {
+        return { isValid: false, error: 'Invalid serial number' };
+      }
+  
+      const snValidation = await this.getSNInfo(sn);
       
-      if (snValidation.success) {
+      if (snValidation.success && snValidation.info?.[0]) {
         return { 
           isValid: true, 
-          data: parsedData 
+          data: {
+            sn: snValidation.info[0].SN,
+            type: snValidation.info[0].ProductTpye,
+            info: JSON.parse(snValidation.info[0].Info)
+          }
         };
       }
-
+  
       return { isValid: false, error: 'Invalid device' };
     } catch (error) {
       return { 

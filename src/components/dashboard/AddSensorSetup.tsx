@@ -20,7 +20,7 @@ const AddSensorSetup = ({ onClose }: AddSensorSetupProps) => {
           <div className="bg-black/70 backdrop-blur-lg border border-zinc-700/50 rounded-xl max-w-2xl p-8 w-full">
             <div className='w-4/5 mx-auto'>
               <p className="text-gray-400 text-center font-sans text-lg my-5">
-                To add a Leaf AI device, open Leaf-MyGrow on your smartphone and use your camera to scan the QR code
+                To add a Leaf AI device, open your camera on your smartphone to scan the QR code
               </p>
             </div>
 
