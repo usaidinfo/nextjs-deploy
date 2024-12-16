@@ -15,16 +15,16 @@ export default function DeviceSetupPage() {
 
   useEffect(() => {
     let html5QrCode: Html5Qrcode;
-  
+
     if (showQRScanner) {
       html5QrCode = new Html5Qrcode("qr-reader");
-  
+
       const config = {
         fps: 10,
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0
       };
-  
+
       html5QrCode.start(
         { facingMode: "environment" },
         config,
@@ -40,8 +40,8 @@ export default function DeviceSetupPage() {
             } else {
               setScanError(validation.error || 'Invalid QR code');
             }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (err) {
-            console.error('Error validating device:', err);
             setScanError('Error validating device');
           }
         },
@@ -55,7 +55,7 @@ export default function DeviceSetupPage() {
         console.error('Error starting QR scanner:', err);
       });
     }
-  
+
     return () => {
       if (html5QrCode?.isScanning) {
         html5QrCode.stop().catch(console.error);

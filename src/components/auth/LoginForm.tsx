@@ -109,8 +109,16 @@ export default function LoginForm() {
       if (response.success && response.token) {
         localStorage.setItem('token', response.token);
         
-        if (window.innerWidth <= 768) {
-          router.push('/mobile/device-setup');
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSetup = urlParams.get('setup') === 'true';
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+          if (isSetup) {
+            router.push('/mobile/device-setup');
+          } else {
+            router.push('/mobile/dashboard');
+          }
         } else {
           router.push('/dashboard');
         }
