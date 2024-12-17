@@ -10,6 +10,7 @@ import { useParams } from 'next/navigation';
 import { EnvironmentWidgetSkeleton } from '@components/dashboard/skeletons/EnvironmentWidgetSkeleton';
 import { ChartWidgetSkeleton } from '@components/dashboard/skeletons/ChartWidgetSkeleton';
 import { format } from 'date-fns';
+import FindInPageIcon from '@mui/icons-material/FindInPage';
 
 interface ReadingData {
   time: string;
@@ -204,11 +205,19 @@ function LocationPage() {
     return (
       <div className="flex flex-col gap-6">
         <div className="md:flex gap-3">
-          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex items-center justify-center min-h-[400px]">
-            <p className="text-red-500 text-lg">{error}</p>
+          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex flex-col items-center justify-center min-h-[400px]">
+            <div className="text-zinc-400 w-16 h-16 mb-4">
+              <FindInPageIcon className="w-full h-full" />
+            </div>
+            <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
+            <p className="text-zinc-400 text-center">{error}</p>
           </div>
-          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 flex items-center justify-center min-h-[400px]">
-            <p className="text-red-500 text-lg">{error}</p>
+          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 flex flex-col items-center justify-center min-h-[400px]">
+            <div className="text-zinc-400 w-16 h-16 mb-4">
+              <FindInPageIcon className="w-full h-full" />
+            </div>
+            <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
+            <p className="text-zinc-400 text-center">{error}</p>
           </div>
         </div>
       </div>
@@ -220,6 +229,10 @@ function LocationPage() {
       <div className="flex flex-col gap-6">
         <div className="md:flex gap-3">
           <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex items-center justify-center min-h-[400px]">
+          <div className="text-zinc-400 w-16 h-16 mb-4">
+            <FindInPageIcon className="w-full h-full" />
+          </div>
+          <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
             <p className="text-white text-lg">No sensor data available</p>
           </div>
           <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 flex items-center justify-center min-h-[400px]">

@@ -7,6 +7,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useDeviceStore } from "lib/store/deviceStore";
 import { SENSOR_IMAGES, SENSOR_MEASUREMENTS, SENSOR_FEATURES, SensorType } from "lib/constants/sensor-types";
+import { sensorsService } from "lib/services/sensor.service";
 
 const SUBSTRATE_OPTIONS = ['Organic Wool', 'Coco', 'Rock Wool'];
 
@@ -14,9 +15,10 @@ export default function SelectSensorPage() {
   const router = useRouter();
   const [selectedSubstrate, setSelectedSubstrate] = useState("");
   const [error, setError] = useState<string | null>(null);
-  
+  const deviceSN = useDeviceStore(state => state.deviceSN);
   const addSensor = useDeviceStore((state) => state.addSensor);
   const scannedSensor = useDeviceStore((state) => state.scannedSensor);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!scannedSensor) {
@@ -24,26 +26,50 @@ export default function SelectSensorPage() {
     }
   }, [scannedSensor, router]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (isLoading) return;
+
     if (!scannedSensor) {
       setError('No sensor data available');
       return;
     }
 
+    if (!deviceSN) {
+      setError('Device information not found');
+      return;
+    }
+  
     if (scannedSensor.hasSubstrate && !selectedSubstrate) {
       setError('Please select a substrate type');
       return;
     }
-
-    setError(null);
-
-    addSensor({
-      ...scannedSensor,
-      image: SENSOR_IMAGES[scannedSensor.type as SensorType],
-      substrate: selectedSubstrate,
-    });
-
-    router.push(`/mobile/plant`);
+  
+    setIsLoading(true);
+    try {
+      const response = await sensorsService.addAddonSensor({
+        sn: deviceSN,
+        addonsensorsn: scannedSensor.sn
+      });
+  
+      if (!response.success) {
+        setError(response.message || 'Failed to connect sensor');
+        return;
+      }
+  
+      setError(null);
+      addSensor({
+        ...scannedSensor,
+        image: SENSOR_IMAGES[scannedSensor.type as SensorType],
+        substrate: selectedSubstrate,
+      });
+  
+      router.push(`/mobile/plant`);
+    } catch (error) {
+      console.log('error connecting sensor :', error)
+      setError('Failed to connect sensor. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!scannedSensor) {
@@ -140,13 +166,15 @@ export default function SelectSensorPage() {
 
         <button
           onClick={handleContinue}
-          className={`px-4 py-3 rounded-xl text-sm font-medium flex items-center ${
-            (!scannedSensor.hasSubstrate || selectedSubstrate) 
-              ? "bg-white text-black" 
+          disabled={isLoading}
+          className={`px-4 py-3 rounded-xl text-sm font-medium flex items-center ${(!scannedSensor.hasSubstrate || selectedSubstrate)
+              ? isLoading
+                ? "bg-gray-300 text-gray-600"
+                : "bg-white text-black"
               : "bg-gray-300 text-gray-600"
-          }`}
+            }`}
         >
-          Continue &nbsp;
+          {isLoading ? 'Connecting...' : 'Continue'} &nbsp;
           <ArrowForwardIcon sx={{ fontSize: 18, fontWeight: 300 }} />
         </button>
       </div>

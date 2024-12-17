@@ -26,6 +26,7 @@ export default function PlantSelectPage() {
   const updateLatestSensor = useDeviceStore((state) => state.updateLatestSensor);
   const [selectionError, setSelectionError] = useState<string | null>(null);
   const [showPlantModal, setShowPlantModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
 
@@ -54,14 +55,22 @@ export default function PlantSelectPage() {
     setSelectionError(null);
   };
 
-  const handleContinue = () => {
-    if (selectedPlant) {
+  const handleContinue = async () => {
+    if (!selectedPlant) {
+      setSelectionError('Please select a plant to continue');
+      return;
+    }
+  
+    setIsSubmitting(true);
+    try {
       const latestSensor = sensors[sensors.length - 1];
       updateLatestSensor({
         ...latestSensor,
         plantName: selectedPlant.plant_name
       });
       router.push(`/mobile/device-details/${selectedLocation?.location_id}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -129,18 +138,16 @@ export default function PlantSelectPage() {
         </button>
 
         <button
-           onClick={() => {
-            if (!selectedPlant) {
-              setSelectionError('Please select a plant to continue');
-              return;
-            }
-            setSelectionError(null);
-            handleContinue();
-          }}
-          className={`px-4 py-3 rounded-xl text-black text-sm font-medium flex items-center ${selectedPlant ? "bg-white" : "bg-gray-300"
+          onClick={handleContinue}
+          disabled={isSubmitting || !selectedPlant}
+          className={`px-4 py-3 rounded-xl text-sm font-medium flex items-center ${selectedPlant
+              ? isSubmitting
+                ? "bg-gray-300 text-gray-600"
+                : "bg-white text-black"
+              : "bg-gray-300 text-gray-600"
             }`}
         >
-          Continue &nbsp;
+          {isSubmitting ? 'Processing...' : 'Continue'} &nbsp;
           <ArrowForwardIcon sx={{ fontSize: 18, fontWeight: 300 }} />
         </button>
       </div>
