@@ -56,7 +56,6 @@ function LocationPage() {
           return;
         }
 
-        // Find sensor for current location
         const locationSensor = sensorsResponse.sensor.find(
           (          sensor: { location_id: string | string[] | undefined; }) => sensor.location_id === locationId
         );
@@ -78,7 +77,6 @@ function LocationPage() {
           return;
         }
 
-        // If no values available for this sensor
         if (!valuesResponse.sensorvalue || valuesResponse.sensorvalue.length === 0) {
           setError('No sensor data available for this location');
           setSensorData(null);
@@ -86,7 +84,6 @@ function LocationPage() {
           return;
         }
 
-        // Process the data if we have it
         const latestReading = valuesResponse.sensorvalue[0];
         const parsedData: SensorData = JSON.parse(latestReading.SENSORDATAJSON);
         setSensorData(parsedData);
@@ -206,15 +203,15 @@ function LocationPage() {
       <div className="flex flex-col gap-6">
         <div className="md:flex gap-3">
           <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex flex-col items-center justify-center min-h-[400px]">
-            <div className="text-zinc-400 w-16 h-16 mb-4">
-              <FindInPageIcon className="w-full h-full" />
+            <div className="text-zinc-400 mb-4">
+              <FindInPageIcon className="w-16 h-16" />
             </div>
             <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
             <p className="text-zinc-400 text-center">{error}</p>
           </div>
           <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 flex flex-col items-center justify-center min-h-[400px]">
-            <div className="text-zinc-400 w-16 h-16 mb-4">
-              <FindInPageIcon className="w-full h-full" />
+            <div className="text-zinc-400 mb-4">
+              <FindInPageIcon className="w-16 h-16" />
             </div>
             <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
             <p className="text-zinc-400 text-center">{error}</p>
