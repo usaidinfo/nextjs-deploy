@@ -1,3 +1,5 @@
+import { SENSOR_MEASUREMENTS, SENSOR_PRODUCT_TYPES, SENSOR_SUBSTRATE_REQUIRED } from "lib/constants/sensor-types";
+
 export default interface DeviceInfo {
   sn: string;
   type: string;
@@ -129,6 +131,10 @@ class SensorsService {
       const snValidation = await this.getSNInfo(sn);
       
       if (snValidation.success && snValidation.info?.[0]) {
+        if (snValidation.info[0].ProductTpye !== 'lclite') {
+          return { isValid: false, error: 'Invalid device type. Please scan a Leaf-Connect Lite device.' };
+        }
+  
         return { 
           isValid: true, 
           data: {
@@ -144,6 +150,52 @@ class SensorsService {
       return { 
         isValid: false,
         error: error instanceof Error ? error.message : 'Failed to validate QR data' 
+      };
+    }
+  }
+
+  async validateAddSensorQRData(qrData: string) {
+    try {
+      // Parse the URL from QR code
+      const url = new URL(qrData);
+      if (!url.hostname.includes('leafai')) {
+        return { isValid: false, error: 'Invalid sensor QR code' };
+      }
+  
+      // Extract serial number from URL
+      const pathSegments = url.pathname.split('/').filter(Boolean);
+      const sn = pathSegments[pathSegments.length - 1];
+      if (!sn) {
+        return { isValid: false, error: 'Invalid serial number' };
+      }
+  
+      // Validate sensor info
+      const snValidation = await this.getSNInfo(sn);
+      
+      if (snValidation.success && snValidation.info?.[0]) {
+        const productType = snValidation.info[0].ProductTpye;
+        const sensorType = SENSOR_PRODUCT_TYPES[productType];
+  
+        if (!sensorType) {
+          return { isValid: false, error: 'Unsupported sensor type' };
+        }
+  
+        return { 
+          isValid: true, 
+          data: {
+            sn: snValidation.info[0].SN,
+            type: sensorType,
+            measurements: SENSOR_MEASUREMENTS[sensorType],
+            hasSubstrate: SENSOR_SUBSTRATE_REQUIRED[sensorType]
+          }
+        };
+      }
+  
+      return { isValid: false, error: 'Invalid sensor' };
+    } catch (error) {
+      return { 
+        isValid: false,
+        error: error instanceof Error ? error.message : 'Failed to validate sensor' 
       };
     }
   }

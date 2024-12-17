@@ -1,28 +1,28 @@
-// src/app/dashboard/[locationId]/page.tsx
+// src/app/mobile/dashboard/[locationId]/page.tsx
 'use client';
-import React, { useEffect, useState } from 'react';
-import { withAuth } from "lib/utils/auth";
-import EnvironmentWidget from "@components/dashboard/widgets/EnvironmentWidget";
-import ChartWidget, { ChartData } from "@components/dashboard/widgets/EnvironmentChart";
+
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import EnvironmentWidget from '@components/dashboard/widgets/EnvironmentWidget';
+import ChartWidget, { ChartData } from '@components/dashboard/widgets/EnvironmentChart';
 import { sensorsService } from 'lib/services/sensor.service';
 import type { SensorData } from 'lib/types/sensor';
-import { useParams } from 'next/navigation';
-import { EnvironmentWidgetSkeleton } from '@components/dashboard/skeletons/EnvironmentWidgetSkeleton';
-import { ChartWidgetSkeleton } from '@components/dashboard/skeletons/ChartWidgetSkeleton';
+import FindInPageIcon from '@mui/icons-material/FindInPage';
 import { format } from 'date-fns';
 
 interface ReadingData {
-  time: string;
-  temp: number;
-  humidity: number;
-  vpd: number;
-  co2: number;
-}
+    time: string;
+    temp: number;
+    humidity: number;
+    vpd: number;
+    co2: number;
+  }
 
-function LocationPage() {
+export default function LocationDashboardPage() {
   const { locationId } = useParams();
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartData>({
     months: [],
     tempData: [],
@@ -30,9 +30,6 @@ function LocationPage() {
     vpdData: [],
     co2Data: []
   });
-  const [error, setError] = useState<string | null>(null);
-  const [selectedPlant, setSelectedPlant] = useState<string | null>(null);
-  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,7 +44,6 @@ function LocationPage() {
           return;
         }
 
-        // If no sensors at all
         if (!sensorsResponse.sensor || sensorsResponse.sensor.length === 0) {
           setError('No sensors found');
           setSensorData(null);
@@ -55,12 +51,10 @@ function LocationPage() {
           return;
         }
 
-        // Find sensor for current location
         const locationSensor = sensorsResponse.sensor.find(
-          (          sensor: { location_id: string | string[] | undefined; }) => sensor.location_id === locationId
+            (          sensor: { location_id: string | string[] | undefined; }) => sensor.location_id === locationId
         );
 
-        // If no sensor for this location
         if (!locationSensor) {
           setError('No sensor found for this location');
           setSensorData(null);
@@ -77,7 +71,6 @@ function LocationPage() {
           return;
         }
 
-        // If no values available for this sensor
         if (!valuesResponse.sensorvalue || valuesResponse.sensorvalue.length === 0) {
           setError('No sensor data available for this location');
           setSensorData(null);
@@ -85,7 +78,6 @@ function LocationPage() {
           return;
         }
 
-        // Process the data if we have it
         const latestReading = valuesResponse.sensorvalue[0];
         const parsedData: SensorData = JSON.parse(latestReading.SENSORDATAJSON);
         setSensorData(parsedData);
@@ -95,10 +87,7 @@ function LocationPage() {
           .map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
             const parsed = JSON.parse(reading.SENSORDATAJSON);
             return {
-              time: new Date(reading.CreateDateTime).toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              }),
+              time: format(new Date(reading.CreateDateTime), 'HH:mm'),
               temp: parsed.AirTemp,
               humidity: parsed.AirHum,
               vpd: parsed.AirVPD,
@@ -129,17 +118,6 @@ function LocationPage() {
       return () => clearInterval(interval);
     }
   }, [locationId]);
-
-  useEffect(() => {
-    const handlePlantSelected = (event: CustomEvent) => {
-      setSelectedPlant(event.detail.plantId);
-    };
-
-    window.addEventListener('plantSelected', handlePlantSelected as EventListener);
-    return () => {
-      window.removeEventListener('plantSelected', handlePlantSelected as EventListener);
-    };
-  }, []);
 
   const handleDateRangeChange = async (startDate: Date, endDate: Date) => {
     if (!locationId) return;
@@ -191,64 +169,107 @@ function LocationPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6">
-        <div className="md:flex gap-3">
-          <EnvironmentWidgetSkeleton />
-          <ChartWidgetSkeleton />
+      <div className="flex flex-col gap-4">
+        <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 min-h-[400px]">
+          <div className="animate-pulse">
+            <div className="flex flex-col">
+              <div className="h-7 w-32 bg-zinc-700/50 rounded mb-2" />
+              <div className="h-5 w-24 bg-zinc-700/50 rounded mb-10" />
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div 
+                    key={i} 
+                    className="h-[110px] bg-[rgba(24,24,27,0.2)] backdrop-blur-sm border border-zinc-700/50 rounded-xl p-4"
+                  >
+                    <div className="flex gap-3 h-full">
+                      <div className="w-[71.4%] border-r border-zinc-700/50 pr-4">
+                        <div className="h-4 w-24 bg-zinc-700/50 rounded mb-4" /> 
+                        <div className="h-8 w-20 bg-zinc-700/50 rounded mx-auto" />
+                      </div>
+                      <div className="w-[28.6%] flex flex-col justify-between">
+                        <div className="space-y-1">
+                          <div className="h-3 w-12 bg-zinc-700/50 rounded" />
+                          <div className="h-3 w-8 bg-zinc-700/50 rounded" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="h-3 w-12 bg-zinc-700/50 rounded" />
+                          <div className="h-3 w-8 bg-zinc-700/50 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col gap-6">
-        <div className="md:flex gap-3">
-          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex items-center justify-center min-h-[400px]">
-            <p className="text-red-500 text-lg">{error}</p>
-          </div>
-          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 flex items-center justify-center min-h-[400px]">
-            <p className="text-red-500 text-lg">{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!sensorData) {
-    return (
-      <div className="flex flex-col gap-6">
-        <div className="md:flex gap-3">
-          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex items-center justify-center min-h-[400px]">
-            <p className="text-white text-lg">No sensor data available</p>
-          </div>
-          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 flex items-center justify-center min-h-[400px]">
-            <p className="text-white text-lg">No sensor data available</p>
+  
+        <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 min-h-[400px]">
+          <div className="animate-pulse">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <div className="h-7 w-32 bg-zinc-700/50 rounded mb-2" />
+                <div className="h-5 w-48 bg-zinc-700/50 rounded" />
+              </div>
+              <div className="h-8 w-8 bg-zinc-700/50 rounded-full" /> 
+            </div>
+            
+            <div className="h-[300px] relative">
+              <div className="absolute inset-0 flex flex-col justify-between py-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="w-full h-[1px] bg-zinc-700/30" />
+                ))}
+              </div>
+              
+              <div className="absolute inset-0 flex items-center">
+                {[...Array(4)].map((_, i) => (
+                  <div 
+                    key={i}
+                    className="h-1/2 w-full bg-zinc-700/50 rounded"
+                    style={{
+                      transform: `translateY(${Math.sin(i) * 20}px)`,
+                      opacity: 0.5 - i * 0.1
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     );
   }
   
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 min-h-[400px] flex flex-col items-center justify-center">
+          <div className="text-zinc-400 w-16 h-16 mb-4">
+            <FindInPageIcon className="w-full h-full" />
+          </div>
+          <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
+          <p className="text-zinc-400 text-center">{error}</p>
+        </div>
+        <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 min-h-[400px] flex flex-col items-center justify-center">
+          <div className="text-zinc-400 w-16 h-16 mb-4">
+            <FindInPageIcon className="w-full h-full" />
+          </div>
+          <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
+          <p className="text-zinc-400 text-center">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="md:flex gap-3">
-        <EnvironmentWidget sensorData={sensorData} error={error} />
-        <ChartWidget 
+    <div className="flex flex-col gap-4">
+      <EnvironmentWidget sensorData={sensorData} error={error} />
+      <ChartWidget 
         data={chartData} 
         onDateRangeChange={handleDateRangeChange}
         isLoading={isLoading}
       />
-      </div>
-
-      {selectedPlant && (
-        <div className="md:flex gap-3">
-          <EnvironmentWidget sensorData={sensorData} error={error} title={`Plant Environment`} />
-          <ChartWidget data={chartData} title={`Plant Data`} />
-        </div>
-      )}
     </div>
   );
 }
-
-export default withAuth(LocationPage);

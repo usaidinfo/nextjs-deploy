@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import HomeIcon from "@mui/icons-material/Home";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { locationService } from "lib/services/location.service";
+import { sensorsService } from "lib/services/sensor.service";
 import type { Location } from "lib/types/location";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
@@ -18,26 +19,27 @@ export default function LocationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const selectedLocation = useDeviceStore((state) => state.selectedLocation);
+  const deviceSN = useDeviceStore((state) => state.deviceSN);
   const setLocation = useDeviceStore((state) => state.setLocation);
   const [selectionError, setSelectionError] = useState<string | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [isCreatingSensor, setIsCreatingSensor] = useState(false);
 
-
-    const fetchLocations = async () => {
-      try {
-        const response = await locationService.getLocations();
-        if (response.success && response.locations) {
-          setLocations(response.locations);
-        } else {
-          setError(response.message || "Failed to fetch locations");
-        }
-      } catch (err) {
-        console.error('error while loading locations: ', err)
-        setError("Failed to load locations");
-      } finally {
-        setIsLoading(false);
+  const fetchLocations = async () => {
+    try {
+      const response = await locationService.getLocations();
+      if (response.success && response.locations) {
+        setLocations(response.locations);
+      } else {
+        setError(response.message || "Failed to fetch locations");
       }
-    };
+    } catch (err) {
+      console.error('error while loading locations: ', err)
+      setError("Failed to load locations");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchLocations();
@@ -47,7 +49,39 @@ export default function LocationPage() {
     setLocation(location);
     setSelectionError(null);
   };
-  
+
+  const handleContinue = async () => {
+    if (!selectedLocation) {
+      setSelectionError('Please select a location to continue');
+      return;
+    }
+
+    if (!deviceSN) {
+      setSelectionError('No device serial number found');
+      return;
+    }
+
+    setIsCreatingSensor(true);
+    setSelectionError(null);
+
+    try {
+      const createResponse = await sensorsService.createSensor({
+        location_id: selectedLocation.location_id,
+        sn: deviceSN
+      });
+
+      if (createResponse.success) {
+        router.push(`/mobile/device-details/${selectedLocation.location_id}`);
+      } else {
+        setSelectionError(createResponse.message || 'Failed to register device');
+      }
+    } catch (err) {
+      console.error('Error creating sensor:', err);
+      setSelectionError('Failed to register device');
+    } finally {
+      setIsCreatingSensor(false);
+    }
+  };
 
   return (
     <div className="min-h-[100dvh] h-auto bg-gradient flex flex-col p-4">
@@ -74,7 +108,6 @@ export default function LocationPage() {
             ) : error ? (
               <div className="text-red-400 text-center py-4">{error}</div>
             ) : (
-              <>
               <div className="space-y-2">
                 {locations.map((location) => (
                   <button
@@ -93,7 +126,6 @@ export default function LocationPage() {
                   </button>
                 ))}
               </div>
-              </>
             )}
           </div>
         </div>
@@ -109,27 +141,23 @@ export default function LocationPage() {
           onClick={() => router.back()}
           className="w-12 h-12 flex items-center justify-center rounded-full text-black bg-white border border-zinc-700"
         >
-          <span className="text-center">
-            <ArrowBackIcon sx={{ fontSize: 18, fontWeight: 300 }} />
-          </span>
+          <ArrowBackIcon sx={{ fontSize: 18, fontWeight: 300 }} />
         </button>
 
         <button
-          onClick={() => {
-            if (!selectedLocation) {
-              setSelectionError('Please select a location to continue');
-              return;
-            }
-            setSelectionError(null);
-            router.push(`/mobile/device-details/${selectedLocation.location_id}`);
-          }}
-          className={`px-4 py-3 rounded-xl text-black text-sm font-medium flex items-center ${selectedLocation ? "bg-white" : "bg-gray-300"
-            }`}
+          onClick={handleContinue}
+          disabled={isCreatingSensor}
+          className={`px-4 py-3 rounded-xl text-sm font-medium flex items-center ${
+            selectedLocation && !isCreatingSensor
+              ? "bg-white text-black"
+              : "bg-gray-300 text-gray-600"
+          }`}
         >
-          Continue &nbsp;
+          {isCreatingSensor ? "Registering..." : "Continue"} &nbsp;
           <ArrowForwardIcon sx={{ fontSize: 18, fontWeight: 300 }} />
         </button>
       </div>
+      
       <CreateLocationModal
         isOpen={showLocationModal}
         onClose={() => setShowLocationModal(false)}

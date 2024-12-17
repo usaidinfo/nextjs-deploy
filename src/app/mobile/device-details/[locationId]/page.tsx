@@ -7,7 +7,8 @@ import { useDeviceStore } from 'lib/store/deviceStore';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useEffect, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { SENSOR_IMAGES, SensorType, VALID_SENSORS } from 'lib/constants/sensor-types';
+import { SENSOR_IMAGES } from 'lib/constants/sensor-types';
+import { sensorsService } from 'lib/services/sensor.service';
 
 
 export default function DeviceDetailsPage() {
@@ -45,22 +46,25 @@ export default function DeviceDetailsPage() {
       config,
       async (decodedText) => {
         try {
-          const parsedData = JSON.parse(decodedText);
-          const validSensor = VALID_SENSORS.find(sensor => sensor.type === parsedData.type);
+          const validation = await sensorsService.validateAddSensorQRData(decodedText);
           
-          if (validSensor) {
+          if (validation.isValid && validation.data) {
             html5QrCode.stop();
             setScannedSensor({
-              ...parsedData,
-              image: SENSOR_IMAGES[parsedData.type as SensorType]
+              type: validation.data.type,
+              sn: validation.data.sn,
+              image: SENSOR_IMAGES['VWC Soil Moisture Sensor'],
+              measurements: [],
+              hasSubstrate: false
             });
+            setShowQRScanner(false);
             router.push('/mobile/select-sensor');
           } else {
-            setScanError('Invalid sensor type');
+            setScanError(validation.error || 'Invalid QR code');
           }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
-          console.error('Error scanning QR code:', err);
-          setScanError('Invalid QR code format');
+          setScanError('Error validating sensor');
         }
       },
       (errorMessage) => {
@@ -79,7 +83,7 @@ export default function DeviceDetailsPage() {
       html5QrCode.stop().catch(console.error);
     }
   };
-}, [showQRScanner, router, setScannedSensor]);
+}, [showQRScanner, setScannedSensor]);
 
 const handleLetsGrow = async () => {
   if (isNavigating) return;
@@ -171,10 +175,16 @@ if (showQRScanner) {
                    <p className="text-gray-400 text-sm">Sensor Type</p>
                    <p className="font-medium">{sensor.type}</p>
                  </div>
+                 <div>
+                   <p className="text-gray-400 text-sm">SN Number</p>
+                   <p className="font-medium">{sensor.sn}</p>
+                 </div>
                  {sensor.plantName && (
                    <div>
                      <p className="text-gray-400 text-sm">Plant</p>
-                     <p className="font-medium">{sensor.plantName}</p>
+                     <div className="flex items-center gap-2">
+                       <p className="font-medium">{sensor.plantName}</p>
+                     </div>
                    </div>
                  )}
                  {sensor.substrate && (

@@ -13,6 +13,7 @@ import { useAuth } from 'lib/hooks/useAuth';
 import type { Location } from 'lib/types/location';
 import { Plant } from 'lib/types/plants';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   onClose: () => void;
@@ -26,6 +27,7 @@ interface LocationPlantsState {
 }
 
 export default function MobileSidebar({ onClose }: Props) {
+  const router = useRouter();
   const { handleLogout } = useAuth();
   const [locations, setLocations] = useState<Location[]>([]);
   const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
@@ -89,6 +91,12 @@ export default function MobileSidebar({ onClose }: Props) {
     }
   };
 
+  const handleLocationClick = (locationId: string) => {
+    toggleLocation(locationId);
+    router.push(`/mobile/dashboard/${locationId}`);
+    onClose();
+  };
+
   return (
     <div className="h-full flex flex-col py-6">
           <div className="px-4 border-b border-zinc-700/50 mb-4">
@@ -111,7 +119,7 @@ export default function MobileSidebar({ onClose }: Props) {
             {locations.map((location) => (
               <div key={location.location_id}>
                 <button
-                  onClick={() => toggleLocation(location.location_id)}
+                  onClick={() => handleLocationClick(location.location_id)}
                   className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-zinc-800/50 transition-colors text-white"
                 >
                   <div className="flex items-center gap-3">

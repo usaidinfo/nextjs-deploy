@@ -4,6 +4,7 @@ export interface SensorData {
   AirHum: number;
   AirTemp: number;
   AirCO2: number;
+  AirVPD: number;
   SensorType: number;
 }
 

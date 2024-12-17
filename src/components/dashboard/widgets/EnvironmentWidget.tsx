@@ -35,7 +35,7 @@ const EnvironmentWidget: React.FC<EnvironmentWidgetProps> = ({ sensorData, error
     },
     {
       label: 'VPD',
-      value: '23',
+      value: sensorData?.AirVPD.toFixed(2) || '0',
       unit: 'kPa',
       highest: '0.9',
       lowest: '0.5',

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DateRange } from 'react-date-range';
 import CalendarIcon from '@mui/icons-material/CalendarToday';
 import { format } from 'date-fns';
-import { sensorsService } from 'lib/services/sensor.service';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { RangeKeyDict } from 'react-date-range';
@@ -27,15 +26,8 @@ export interface ChartData {
 interface ChartWidgetProps {
   data: ChartData;
   title?: string | null;
-}
-
-interface SensorReading {
-  time: string;
-  temp: number;
-  humidity: number;
-  co2: number;
-  CreateDateTime: string;
-  SENSORDATAJSON: string;
+  onDateRangeChange?: (startDate: Date, endDate: Date) => void;
+  isLoading?: boolean;
 }
 
 interface ChartPayloadEntry {
@@ -50,11 +42,13 @@ interface CustomTooltipProps {
   label?: string;
 }
 
-const ChartWidget: React.FC<ChartWidgetProps> = ({ data: initialData, title }) => {
+const ChartWidget: React.FC<ChartWidgetProps> = ({ 
+  data, 
+  title, 
+  onDateRangeChange,
+  isLoading = false 
+}) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [data, setData] = useState(initialData);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState([
     {
       startDate: new Date(new Date().setDate(new Date().getDate() - 1)),
@@ -69,61 +63,6 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ data: initialData, title }) =
     vpd: 'rgba(59,130,246,1)',
     co2: 'rgba(234,179,8,1)'
   };
-
-  useEffect(() => {
-    const fetchDateRangeData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const sensorsResponse = await sensorsService.getSensors();
-
-        if (sensorsResponse.success && sensorsResponse.sensor?.[0]) {
-          const sensorSN = sensorsResponse.sensor[0].sn;
-          
-          const valuesResponse = await sensorsService.getSensorValues(sensorSN);
-
-          if (valuesResponse.success && valuesResponse.sensorvalue?.length > 0) {
-            const filteredReadings = valuesResponse.sensorvalue
-              .filter((reading: { CreateDateTime: string | number | Date; }) => {
-                const readingDate = new Date(reading.CreateDateTime);
-                return readingDate >= dateRange[0].startDate && 
-                       readingDate <= dateRange[0].endDate;
-              })
-              .map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
-                const parsed = JSON.parse(reading.SENSORDATAJSON);
-                return {
-                  time: format(new Date(reading.CreateDateTime), 'MMM dd HH:mm'),
-                  temp: parsed.AirTemp,
-                  humidity: parsed.AirHum,
-                  co2: parsed.AirCO2
-                };
-              })
-              .reverse();
-
-            if (filteredReadings.length > 0) {
-              setData({
-                months: filteredReadings.map((r: SensorReading) => r.time),
-                tempData: filteredReadings.map((r: SensorReading) => r.temp),
-                humidityData: filteredReadings.map((r: SensorReading) => r.humidity),
-                vpdData: Array(filteredReadings.length).fill(23),
-                co2Data: filteredReadings.map((r: SensorReading) => r.co2)
-              });
-            } else {
-              setData(initialData);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching date range data:', error);
-        setError('Failed to fetch sensor data');
-        setData(initialData);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDateRangeData();
-  }, [dateRange, initialData]);
 
   const hasData = data.months.length > 0 && data.tempData.length > 0;
 
@@ -144,6 +83,19 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ data: initialData, title }) =
       vpd: data.vpdData[index],
       co2: data.co2Data[index]
     }));
+  };
+
+  const handleDateRangeChange = (ranges: RangeKeyDict) => {
+    const newRange = [{
+      startDate: ranges.selection.startDate || new Date(),
+      endDate: ranges.selection.endDate || new Date(),
+      key: 'selection'
+    }];
+    setDateRange(newRange);
+    
+    if (onDateRangeChange && ranges.selection.startDate && ranges.selection.endDate) {
+      onDateRangeChange(ranges.selection.startDate, ranges.selection.endDate);
+    }
   };
 
   const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
@@ -176,8 +128,8 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ data: initialData, title }) =
   };
 
   return (
-<div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5">
-<div className="mb-3 flex justify-between items-center">
+    <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5">
+      <div className="mb-3 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-white">{title || 'Environment'}</h2>
           <p className="text-white text-sm">
@@ -194,13 +146,7 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ data: initialData, title }) =
               <div className={datePickerCustomStyles.wrapper}>
                 <DateRange
                   ranges={dateRange}
-                  onChange={(ranges: RangeKeyDict) => {
-                    setDateRange([{
-                      startDate: ranges.selection.startDate || new Date(),
-                      endDate: ranges.selection.endDate || new Date(),
-                      key: 'selection'
-                    }]);
-                  }}
+                  onChange={handleDateRangeChange}
                   months={1}
                   direction="horizontal"
                   className={datePickerCustomStyles.calendar}
@@ -213,13 +159,9 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ data: initialData, title }) =
         </div>
       </div>
       
-      {loading ? (
+      {isLoading ? (
         <div className="h-[300px] flex items-center justify-center text-white">
           Loading chart data...
-        </div>
-      ) : error ? (
-        <div className="h-[300px] flex items-center justify-center text-red-500">
-          {error}
         </div>
       ) : !hasData ? (
         <div className="h-[300px] flex items-center justify-center text-white">
@@ -231,59 +173,59 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ data: initialData, title }) =
             data={formatChartData()}
             margin={{ left: -20, right: 30, top: 20, bottom: 10 }}
           >
-                  <XAxis
-                    dataKey="time"
-                    stroke="#FFFFFF"
-                    tick={{ fill: 'white', fontSize: 10 }}
-                    tickLine={false}
-                    axisLine={false}
-                    dy={10}
-                  />
-                  <YAxis
-                    stroke="#FFFFFF"
-                    tick={{ fill: 'white', fontSize: 13 }}
-                    tickLine={false}
-                    axisLine={false}
-                    dx={-10}
-                  />
-                  <CartesianGrid
-                    horizontal={true}
-                    vertical={false}
-                    strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.5)"
-                  />
-                  <Tooltip
-                    content={<CustomTooltip />}
-                    cursor={false}
-                  />
-                  <Line
-                    type="monotoneX"
-                    dataKey="temperature"
-                    stroke={chartColors.temperature}
-                    dot={false}
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotoneX"
-                    dataKey="humidity"
-                    stroke={chartColors.humidity}
-                    dot={false}
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotoneX"
-                    dataKey="vpd"
-                    stroke={chartColors.vpd}
-                    dot={false}
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotoneX"
-                    dataKey="co2"
-                    stroke={chartColors.co2}
-                    dot={false}
-                    strokeWidth={2}
-                  />
+            <XAxis
+              dataKey="time"
+              stroke="#FFFFFF"
+              tick={{ fill: 'white', fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              dy={10}
+            />
+            <YAxis
+              stroke="#FFFFFF"
+              tick={{ fill: 'white', fontSize: 13 }}
+              tickLine={false}
+              axisLine={false}
+              dx={-10}
+            />
+            <CartesianGrid
+              horizontal={true}
+              vertical={false}
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.5)"
+            />
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={false}
+            />
+            <Line
+              type="monotoneX"
+              dataKey="temperature"
+              stroke={chartColors.temperature}
+              dot={false}
+              strokeWidth={2}
+            />
+            <Line
+              type="monotoneX"
+              dataKey="humidity"
+              stroke={chartColors.humidity}
+              dot={false}
+              strokeWidth={2}
+            />
+            <Line
+              type="monotoneX"
+              dataKey="vpd"
+              stroke={chartColors.vpd}
+              dot={false}
+              strokeWidth={2}
+            />
+            <Line
+              type="monotoneX"
+              dataKey="co2"
+              stroke={chartColors.co2}
+              dot={false}
+              strokeWidth={2}
+            />
           </LineChart>
         </ResponsiveContainer>
       )}
