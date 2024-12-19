@@ -5,7 +5,7 @@ import { withAuth } from "lib/utils/auth";
 import EnvironmentWidget from "@components/dashboard/widgets/EnvironmentWidget";
 import ChartWidget, { ChartData } from "@components/dashboard/widgets/EnvironmentChart";
 import { sensorsService } from 'lib/services/sensor.service';
-import type { SensorData } from 'lib/types/sensor';
+import type { SensorData, SensorValue } from 'lib/types/sensor';
 import { useParams } from 'next/navigation';
 import { EnvironmentWidgetSkeleton } from '@components/dashboard/skeletons/EnvironmentWidgetSkeleton';
 import { ChartWidgetSkeleton } from '@components/dashboard/skeletons/ChartWidgetSkeleton';
@@ -33,6 +33,11 @@ function LocationPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [selectedPlant, setSelectedPlant] = useState<string | null>(null);
+  const [historicalData, setHistoricalData] = useState<SensorValue[]>([]);
+  const [currentDateRange, setCurrentDateRange] = useState({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 1)),
+    endDate: new Date()
+  });
   
 
   useEffect(() => {
@@ -48,7 +53,6 @@ function LocationPage() {
           return;
         }
 
-        // If no sensors at all
         if (!sensorsResponse.sensor || sensorsResponse.sensor.length === 0) {
           setError('No sensors found');
           setSensorData(null);
@@ -60,7 +64,6 @@ function LocationPage() {
           (          sensor: { location_id: string | string[] | undefined; }) => sensor.location_id === locationId
         );
 
-        // If no sensor for this location
         if (!locationSensor) {
           setError('No sensor found for this location');
           setSensorData(null);
@@ -70,6 +73,13 @@ function LocationPage() {
 
         const valuesResponse = await sensorsService.getSensorValues(locationSensor.sn);
         
+        if (valuesResponse.success && valuesResponse.sensorvalue) {
+          const latestReading = valuesResponse.sensorvalue[0];
+          const parsedData: SensorData = JSON.parse(latestReading.SENSORDATAJSON);
+          setSensorData(parsedData);
+          setHistoricalData(valuesResponse.sensorvalue);
+        }
+
         if (!valuesResponse.success) {
           setError('This sensor dont have any values');
           setSensorData(null);
@@ -103,7 +113,6 @@ function LocationPage() {
               co2: parsed.AirCO2
             };
           })
-          .reverse();
 
         setChartData({
           months: readings.map((r: { time: ReadingData; }) => r.time),
@@ -140,13 +149,14 @@ function LocationPage() {
   }, []);
 
   const handleDateRangeChange = async (startDate: Date, endDate: Date) => {
+    setCurrentDateRange({ startDate, endDate });
     if (!locationId) return;
     
     setIsLoading(true);
     try {
       const sensorsResponse = await sensorsService.getSensors();
       const locationSensor = sensorsResponse.sensor?.find(
-        (        sensor: { location_id: string | string[]; }) => sensor.location_id === locationId
+        (sensor: { location_id: string | string[]; }) => sensor.location_id === locationId
       );
   
       if (!locationSensor) {
@@ -161,6 +171,8 @@ function LocationPage() {
       );
   
       if (valuesResponse.success && valuesResponse.sensorvalue?.length > 0) {
+        setHistoricalData(valuesResponse.sensorvalue);
+        
         const readings = valuesResponse.sensorvalue.map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
           const parsed = JSON.parse(reading.SENSORDATAJSON);
           return {
@@ -242,17 +254,22 @@ function LocationPage() {
   
   return (
     <div className="flex flex-col gap-6">
-      <div className="md:flex gap-3">
-        <EnvironmentWidget sensorData={sensorData} error={error} />
+      <div className="flex flex-col lg:flex-row gap-3">
+        <EnvironmentWidget 
+          sensorData={sensorData} 
+          historicalData={historicalData} 
+          error={error} 
+        />
         <ChartWidget 
-        data={chartData} 
-        onDateRangeChange={handleDateRangeChange}
-        isLoading={isLoading}
-      />
+          data={chartData} 
+          onDateRangeChange={handleDateRangeChange}
+          isLoading={isLoading}
+          currentDateRange={currentDateRange}
+        />
       </div>
 
       {selectedPlant && (
-        <div className="md:flex gap-3">
+        <div className="flex flex-col lg:flex-row gap-3">
           <EnvironmentWidget sensorData={sensorData} error={error} title={`Plant Environment`} />
           <ChartWidget data={chartData} title={`Plant Data`} />
         </div>

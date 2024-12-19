@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import EnvironmentWidget from '@components/dashboard/widgets/EnvironmentWidget';
 import ChartWidget, { ChartData } from '@components/dashboard/widgets/EnvironmentChart';
 import { sensorsService } from 'lib/services/sensor.service';
-import type { SensorData } from 'lib/types/sensor';
+import type { SensorData, SensorValue } from 'lib/types/sensor';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
 import { format } from 'date-fns';
 
@@ -29,6 +29,11 @@ export default function LocationDashboardPage() {
     humidityData: [],
     vpdData: [],
     co2Data: []
+  });
+  const [historicalData, setHistoricalData] = useState<SensorValue[]>([]);
+  const [currentDateRange, setCurrentDateRange] = useState({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 1)),
+    endDate: new Date()
   });
 
   useEffect(() => {
@@ -64,6 +69,13 @@ export default function LocationDashboardPage() {
 
         const valuesResponse = await sensorsService.getSensorValues(locationSensor.sn);
         
+        if (valuesResponse.success && valuesResponse.sensorvalue) {
+          const latestReading = valuesResponse.sensorvalue[0];
+          const parsedData: SensorData = JSON.parse(latestReading.SENSORDATAJSON);
+          setSensorData(parsedData);
+          setHistoricalData(valuesResponse.sensorvalue);
+        }
+
         if (!valuesResponse.success) {
           setError('This sensor dont have any values');
           setSensorData(null);
@@ -120,6 +132,7 @@ export default function LocationDashboardPage() {
   }, [locationId]);
 
   const handleDateRangeChange = async (startDate: Date, endDate: Date) => {
+    setCurrentDateRange({ startDate, endDate });
     if (!locationId) return;
     
     setIsLoading(true);
@@ -264,11 +277,16 @@ export default function LocationDashboardPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <EnvironmentWidget sensorData={sensorData} error={error} />
+      <EnvironmentWidget
+        sensorData={sensorData}
+        historicalData={historicalData}
+        error={error}
+      />
       <ChartWidget 
         data={chartData} 
         onDateRangeChange={handleDateRangeChange}
         isLoading={isLoading}
+        currentDateRange={currentDateRange}
       />
     </div>
   );

@@ -15,6 +15,12 @@ interface CreatePlantModalProps {
   locationId: string;
 }
 
+const SOIL_TYPES = [
+  { value: 'soil', label: 'Real Soil' },
+  { value: 'stone', label: 'Stone Fibre' },
+  { value: 'coconut', label: 'Coconut Fibre' }
+];
+
 const CreatePlantModal: React.FC<CreatePlantModalProps> = ({
   isOpen,
   onClose,
@@ -22,6 +28,7 @@ const CreatePlantModal: React.FC<CreatePlantModalProps> = ({
   locationId
 }) => {
   const [plantName, setPlantName] = useState('');
+  const [soilType, setSoilType] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,17 +38,22 @@ const CreatePlantModal: React.FC<CreatePlantModalProps> = ({
     setLoading(true);
 
     try {
-      const response = await plantService.createPlant(Number(locationId), plantName.trim());
+      const response = await plantService.createPlant(
+        Number(locationId), 
+        plantName.trim(),
+        soilType
+      );
 
       if (response.success) {
         onPlantCreated();
         onClose();
         setPlantName('');
+        setSoilType('');
       } else {
         setError(response.message || 'Failed to create plant');
       }
     } catch (err) {
-      console.error('error while creating plants: ', err)
+      console.error("error while creating the plant: ", err)
       setError('An error occurred while creating the plant');
     } finally {
       setLoading(false);
@@ -82,24 +94,51 @@ const CreatePlantModal: React.FC<CreatePlantModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <label 
-              htmlFor="plantName" 
-              className="block text-sm font-medium text-zinc-300 mb-2"
-            >
-              Plant Name
-            </label>
-            <input
-              id="plantName"
-              type="text"
-              value={plantName}
-              onChange={(e) => setPlantName(e.target.value)}
-              className="w-full px-4 py-2 md:py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg 
-                        text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500
-                        transition-colors text-base md:text-sm"
-              placeholder="Enter plant name"
-              required
-            />
+          <div className="space-y-4 mb-6">
+            <div>
+              <label 
+                htmlFor="plantName" 
+                className="block text-sm font-medium text-zinc-300 mb-2"
+              >
+                Plant Name
+              </label>
+              <input
+                id="plantName"
+                type="text"
+                value={plantName}
+                onChange={(e) => setPlantName(e.target.value)}
+                className="w-full px-4 py-2 md:py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg 
+                          text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500
+                          transition-colors text-base md:text-sm"
+                placeholder="Enter plant name"
+                required
+              />
+            </div>
+
+            <div>
+              <label 
+                htmlFor="soilType" 
+                className="block text-sm font-medium text-zinc-300 mb-2"
+              >
+                Soil Type
+              </label>
+              <select
+                id="soilType"
+                value={soilType}
+                onChange={(e) => setSoilType(e.target.value)}
+                className="w-full px-4 py-2 md:py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg 
+                          text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500
+                          transition-colors text-base md:text-sm"
+                required
+              >
+                <option value="">Select soil type</option>
+                {SOIL_TYPES.map(type => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
@@ -114,7 +153,7 @@ const CreatePlantModal: React.FC<CreatePlantModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={loading || !plantName.trim()}
+              disabled={loading || !plantName.trim() || !soilType}
               className="px-4 py-3 md:py-2 text-base md:text-sm text-white 
                        bg-blue-600 hover:bg-blue-700 
                        disabled:bg-blue-600/50 disabled:cursor-not-allowed

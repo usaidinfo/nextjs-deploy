@@ -148,8 +148,8 @@ const Sidebar = () => {
           <Image
             src="/leafai-logo3.png"
             alt="Leaf AI"
-            width={96}  // w-24 equals 96px
-            height={72} // h-18 equals 72px
+            width={96}
+            height={72}
             priority
             className="object-contain"
           />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DateRange } from 'react-date-range';
 import CalendarIcon from '@mui/icons-material/CalendarToday';
 import { format } from 'date-fns';
@@ -28,6 +28,10 @@ interface ChartWidgetProps {
   title?: string | null;
   onDateRangeChange?: (startDate: Date, endDate: Date) => void;
   isLoading?: boolean;
+  currentDateRange?: {
+    startDate: Date;
+    endDate: Date;
+  };
 }
 
 interface ChartPayloadEntry {
@@ -46,7 +50,8 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
   data, 
   title, 
   onDateRangeChange,
-  isLoading = false 
+  isLoading = false ,
+  currentDateRange
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState([
@@ -75,6 +80,16 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
     button: "hover:bg-zinc-700"
   };
 
+  useEffect(() => {
+    if (currentDateRange) {
+      setDateRange([{
+        startDate: currentDateRange.startDate,
+        endDate: currentDateRange.endDate,
+        key: 'selection'
+      }]);
+    }
+  }, [currentDateRange]);
+
   const formatChartData = () => {
     return data.months.map((month, index) => ({
       time: month,
@@ -92,6 +107,7 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
       key: 'selection'
     }];
     setDateRange(newRange);
+    setShowDatePicker(false);
     
     if (onDateRangeChange && ranges.selection.startDate && ranges.selection.endDate) {
       onDateRangeChange(ranges.selection.startDate, ranges.selection.endDate);
@@ -128,7 +144,7 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
   };
 
   return (
-    <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5">
+    <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 xl:w-3/5">
       <div className="mb-3 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-white">{title || 'Environment'}</h2>

@@ -38,7 +38,7 @@ class PlantService {
   
     
   
-    async createPlant(locationId: number, plantName: string) {
+    async createPlant(locationId: number, plantName: string, soilType: string) {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -53,7 +53,8 @@ class PlantService {
           },
           body: JSON.stringify({
             location_id: locationId,
-            plant_name: plantName
+            plant_name: plantName,
+            soiltype: soilType
           })
         });
   
