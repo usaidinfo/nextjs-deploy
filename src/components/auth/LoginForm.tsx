@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { authService } from 'lib/services/auth.service';
 import type { LoginRequest } from 'lib/types/auth';
 import { useRouter } from 'next/navigation';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 const AnimatedInput = styled('div')({
   position: 'relative',
@@ -83,6 +85,7 @@ export default function LoginForm() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,20 +102,20 @@ export default function LoginForm() {
     if (isLoading) return;
     setError('');
     setIsLoading(true);
-  
+
     try {
       const response = await authService.login({
         username: formData.username,
         password: formData.password,
       });
-  
+
       if (response.success && response.token) {
         localStorage.setItem('token', response.token);
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         const isSetup = urlParams.get('setup') === 'true';
         const isMobile = window.innerWidth <= 768;
-        
+
         if (isMobile) {
           if (isSetup) {
             router.push('/mobile/device-setup');
@@ -162,25 +165,38 @@ export default function LoginForm() {
             </div>
 
             <div>
-              <Label className='pl-4'>Password</Label>
-              <AnimatedInput>
-                <StyledInput
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  required
-                />
-              </AnimatedInput>
-            </div>
-            <button 
-  type="button" // Important to specify type so it doesn't submit the form
-  onClick={(e) => e.preventDefault()}
-  className='text-slate-400 text-xs pl-5 py-2'
->
-  I forgot my password
-</button>
+  <Label className='pl-4'>Password</Label>
+  <AnimatedInput>
+    <div className="relative">
+      <StyledInput
+        type={showPassword ? "text" : "password"}
+        name="password"
+        value={formData.password}
+        onChange={handleChange}
+        placeholder="Enter your password"
+        required
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+      >
+        {showPassword ? (
+          <VisibilityOffIcon sx={{ fontSize: 20 }} />
+        ) : (
+          <VisibilityIcon sx={{ fontSize: 20 }} />
+        )}
+      </button>
+    </div>
+  </AnimatedInput>
+</div>
+            <button
+              type="button"
+              onClick={(e) => e.preventDefault()}
+              className='text-slate-400 text-xs pl-5 py-2'
+            >
+              I forgot my password
+            </button>
           </div>
 
           {error && (
