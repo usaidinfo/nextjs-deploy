@@ -10,7 +10,6 @@ import { useParams } from 'next/navigation';
 import { EnvironmentWidgetSkeleton } from '@components/dashboard/skeletons/EnvironmentWidgetSkeleton';
 import { ChartWidgetSkeleton } from '@components/dashboard/skeletons/ChartWidgetSkeleton';
 import { format } from 'date-fns';
-import FindInPageIcon from '@mui/icons-material/FindInPage';
 
 interface ReadingData {
   time: string;

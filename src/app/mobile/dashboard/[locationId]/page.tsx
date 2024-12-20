@@ -7,7 +7,6 @@ import EnvironmentWidget from '@components/dashboard/widgets/EnvironmentWidget';
 import ChartWidget, { ChartData } from '@components/dashboard/widgets/EnvironmentChart';
 import { sensorsService } from 'lib/services/sensor.service';
 import type { SensorData, SensorValue } from 'lib/types/sensor';
-import FindInPageIcon from '@mui/icons-material/FindInPage';
 import { format } from 'date-fns';
 
 interface ReadingData {
