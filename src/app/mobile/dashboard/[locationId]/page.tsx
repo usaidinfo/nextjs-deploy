@@ -161,7 +161,7 @@ export default function LocationDashboardPage() {
             vpd: parsed.AirVPD,
             co2: parsed.AirCO2
           };
-        }).reverse();
+        })
   
         setChartData({
           months: readings.map((r: { time: ReadingData; }) => r.time),

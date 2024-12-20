@@ -1,78 +1,79 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { styled } from '@mui/material/styles';
-import Link from 'next/link';
-import { authService } from 'lib/services/auth.service';
-import type { LoginRequest } from 'lib/types/auth';
-import { useRouter } from 'next/navigation';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { useState } from "react";
+import { Button } from "@mui/material";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
+import Link from "next/link";
+import { authService } from "lib/services/auth.service";
+import type { LoginRequest } from "lib/types/auth";
+import { useRouter } from "next/navigation";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-const AnimatedInput = styled('div')({
-  position: 'relative',
-  overflow: 'hidden',
-  borderRadius: '40px',
-  padding: '2px',
-  width: '100%',
-  minWidth: '300px',
+const AnimatedInput = styled("div")({
+  position: "relative",
+  overflow: "hidden",
+  borderRadius: "40px",
+  padding: "2px",
+  width: "100%",
+  minWidth: "300px",
 
-  '&::before': {
+  "&::before": {
     content: '""',
-    position: 'absolute',
-    width: '150px',
-    height: '150%',
-    background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)',
-    animation: 'rotate 3s linear infinite',
-    top: '-25%',
-    left: '-50px',
-    transform: 'rotate(45deg)',
+    position: "absolute",
+    width: "150px",
+    height: "150%",
+    background:
+      "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)",
+    animation: "rotate 3s linear infinite",
+    top: "-25%",
+    left: "-50px",
+    transform: "rotate(45deg)",
   },
 
-  '@keyframes rotate': {
-    '0%': {
-      transform: 'translateX(-100%) rotate(45deg)',
+  "@keyframes rotate": {
+    "0%": {
+      transform: "translateX(-100%) rotate(45deg)",
     },
-    '100%': {
-      transform: 'translateX(200%) rotate(45deg)',
+    "100%": {
+      transform: "translateX(200%) rotate(45deg)",
     },
   },
 });
 
-const StyledInput = styled('input')({
-  width: '100%',
-  minWidth: '300px',
-  padding: '12px 24px',
-  background: 'rgba(24, 24, 27, 0.2)',
-  border: 'none',
-  outline: 'none',
-  color: 'white',
-  fontSize: '14px',
-  borderRadius: '40px',
-  '&::placeholder': {
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: '12px',
+const StyledInput = styled("input")({
+  width: "100%",
+  minWidth: "300px",
+  padding: "12px 24px",
+  background: "rgba(24, 24, 27, 0.2)",
+  border: "none",
+  outline: "none",
+  color: "white",
+  fontSize: "14px",
+  borderRadius: "40px",
+  "&::placeholder": {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontSize: "12px",
   },
 });
 
-const Label = styled('label')({
-  display: 'block',
-  color: 'white',
-  marginBottom: '8px',
-  fontSize: '14px',
+const Label = styled("label")({
+  display: "block",
+  color: "white",
+  marginBottom: "8px",
+  fontSize: "14px",
 });
 
 const darkTheme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: "dark",
     primary: {
-      main: '#2196f3',
+      main: "#2196f3",
     },
     background: {
-      paper: '#18181b',
-      default: '#09090b',
+      paper: "#18181b",
+      default: "#09090b",
     },
   },
 });
@@ -80,27 +81,26 @@ const darkTheme = createTheme({
 export default function LoginForm() {
   const router = useRouter();
   const [formData, setFormData] = useState<LoginRequest>({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-    setError('');
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isLoading) return;
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
@@ -110,27 +110,27 @@ export default function LoginForm() {
       });
 
       if (response.success && response.token) {
-        localStorage.setItem('token', response.token);
+        localStorage.setItem("token", response.token);
 
         const urlParams = new URLSearchParams(window.location.search);
-        const isSetup = urlParams.get('setup') === 'true';
+        const isSetup = urlParams.get("setup") === "true";
         const isMobile = window.innerWidth <= 768;
 
         if (isMobile) {
           if (isSetup) {
-            router.push('/mobile/device-setup');
+            router.push("/mobile/device-setup");
           } else {
-            router.push('/mobile/dashboard');
+            router.push("/mobile/dashboard");
           }
         } else {
-          router.push('/dashboard');
+          router.push("/dashboard");
         }
       } else {
-        setError(response.message || 'Login failed');
+        setError(response.message || "Login failed");
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError('An error occurred. Please try again.');
+      console.error("Login error:", error);
+      setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -139,11 +139,11 @@ export default function LoginForm() {
   return (
     <ThemeProvider theme={darkTheme}>
       <div className="w-full">
-        <div className='mb-12'>
+        <div className="mb-12">
           <h1 className="text-3xl m-0 font-semibold text-white text-center pb-2">
             Nice to see you!
           </h1>
-          <div className='text-xs text-center text-slate-400 font-semibold'>
+          <div className="text-xs text-center text-slate-400 font-semibold">
             Enter your username and password to login
           </div>
         </div>
@@ -151,7 +151,7 @@ export default function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <Label className='pl-4'>Username</Label>
+              <Label className="pl-4">Username</Label>
               <AnimatedInput>
                 <StyledInput
                   type="text"
@@ -165,47 +165,45 @@ export default function LoginForm() {
             </div>
 
             <div>
-  <Label className='pl-4'>Password</Label>
-  <AnimatedInput>
-    <div className="relative">
-      <StyledInput
-        type={showPassword ? "text" : "password"}
-        name="password"
-        value={formData.password}
-        onChange={handleChange}
-        placeholder="Enter your password"
-        required
-      />
-      <button
-        type="button"
-        onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-      >
-        {showPassword ? (
-          <VisibilityOffIcon sx={{ fontSize: 20 }} />
-        ) : (
-          <VisibilityIcon sx={{ fontSize: 20 }} />
-        )}
-      </button>
-    </div>
-  </AnimatedInput>
-</div>
+              <Label className="pl-4">Password</Label>
+              <AnimatedInput>
+                <div className="relative">
+                  <StyledInput
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? (
+                      <VisibilityOffIcon sx={{ fontSize: 20 }} />
+                    ) : (
+                      <VisibilityIcon sx={{ fontSize: 20 }} />
+                    )}
+                  </button>
+                </div>
+              </AnimatedInput>
+            </div>
             <button
               type="button"
               onClick={(e) => e.preventDefault()}
-              className='text-slate-400 text-xs pl-5 py-2'
+              className="text-slate-400 text-xs pl-5 py-2"
             >
               I forgot my password
             </button>
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">
-              {error}
-            </div>
+            <div className="text-red-500 text-sm text-center">{error}</div>
           )}
 
-          <div className='m-1'>
+          <div className="m-1">
             <Button
               type="submit"
               variant="contained"
@@ -213,20 +211,20 @@ export default function LoginForm() {
               disabled={isLoading}
               sx={{
                 py: 1,
-                textTransform: 'none',
-                fontSize: '0.8rem',
+                textTransform: "none",
+                fontSize: "0.8rem",
                 fontWeight: "bold",
-                borderRadius: '12px'
+                borderRadius: "12px",
               }}
             >
-              {isLoading ? 'LOGGING IN...' : 'LOGIN'}
+              {isLoading ? "LOGGING IN..." : "LOGIN"}
             </Button>
           </div>
 
           <div className="text-center">
             <Link href="/signup" className="inline-block">
               <span className="text-sm text-zinc-400">
-                Don&apos;t have an account?{' '}
+                Don&apos;t have an account?{" "}
               </span>
               <span className="text-sm text-blue-500 hover:text-blue-400">
                 Sign up
