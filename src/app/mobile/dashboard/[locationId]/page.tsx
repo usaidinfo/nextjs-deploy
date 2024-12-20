@@ -258,14 +258,22 @@ export default function LocationDashboardPage() {
       <div className="flex flex-col gap-4">
         <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 min-h-[400px] flex flex-col items-center justify-center">
           <div className="text-zinc-400 mb-4">
-            <FindInPageIcon className="w-16 h-16" />
+            <img 
+                  src="/cloud.png" 
+                  alt="No Data" 
+                  className="w-16 h-16 object-contain"
+                />
           </div>
           <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
           <p className="text-zinc-400 text-center">{error}</p>
         </div>
         <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 min-h-[400px] flex flex-col items-center justify-center">
           <div className="text-zinc-400 mb-4">
-            <FindInPageIcon className="w-16 h-16" />
+            <img 
+                  src="/cloud.png" 
+                  alt="No Data" 
+                  className="w-16 h-16 object-contain"
+                />
           </div>
           <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
           <p className="text-zinc-400 text-center">{error}</p>
