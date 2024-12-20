@@ -34,7 +34,7 @@ export default function NotFound() {
           </p>
 
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/login')}
             className="mt-8 px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 
                      rounded-xl text-white flex items-center gap-2 mx-auto transition-all
                      hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]"
