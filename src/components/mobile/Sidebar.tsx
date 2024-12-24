@@ -97,6 +97,16 @@ export default function MobileSidebar({ onClose }: Props) {
     onClose();
   };
 
+  const handlePlantClick = (plant: Plant) => {
+    window.dispatchEvent(new CustomEvent('plantSelected', {
+      detail: {
+        plantId: plant.plant_id,
+        plantName: plant.plant_name
+      }
+    }));
+    onClose();
+  };
+
   return (
     <div className="h-full flex flex-col py-6">
           <div className="px-4 border-b border-zinc-700/50 mb-4">
@@ -142,7 +152,8 @@ export default function MobileSidebar({ onClose }: Props) {
                             ) : locationPlants[location.location_id].plants?.map((plant: Plant) => (
                                 <button
                                     key={plant.plant_id}
-                                    className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-gray-300"
+                                    onClick={() => handlePlantClick(plant)}
+                                    className={`w-full flex items-center gap-2 p-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-gray-300`}
                                 >
                                     <LocalFloristIcon className="w-4 h-4" />
                                     <span className="text-sm">{plant.plant_name}</span>

@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { SENSOR_MEASUREMENTS, SENSOR_PRODUCT_TYPES, SENSOR_SUBSTRATE_REQUIRED } from "lib/constants/sensor-types";
 
 export default interface DeviceInfo {
@@ -39,7 +40,7 @@ class SensorsService {
     }
   }
 
-  async getSensorValues(sn: string, startDate?: Date, endDate?: Date) {
+  async getSensorValues(sn: string, startDate?: Date, endDate?: Date, locationId?: string) {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -54,14 +55,11 @@ class SensorsService {
         },
         body: JSON.stringify({ 
           sn,
-          startDate: startDate?.toISOString(),
-          endDate: endDate?.toISOString()
+          start: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
+          end: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
+          location_id: locationId
         })
       });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
   
       return await response.json();
     } catch (error) {

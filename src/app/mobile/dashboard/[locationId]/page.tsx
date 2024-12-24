@@ -8,6 +8,8 @@ import ChartWidget, { ChartData } from '@components/dashboard/widgets/Environmen
 import { sensorsService } from 'lib/services/sensor.service';
 import type { SensorData, SensorValue } from 'lib/types/sensor';
 import { format } from 'date-fns';
+import PlantSensorChart, { PlantChartData } from '@components/dashboard/widgets/PlantSensorChart';
+import PlantSensorWidget from '@components/dashboard/widgets/PlantSensorWidget';
 
 interface ReadingData {
     time: string;
@@ -15,6 +17,21 @@ interface ReadingData {
     humidity: number;
     vpd: number;
     co2: number;
+  }
+  
+  interface PlantReadingData {
+    time: string;
+    soilTemp: number;
+    bulkEC: number;
+    vwcRock: number;
+    vwc: number;
+    vwcCoco: number;
+    poreEC: number;
+  }
+
+  interface PlantSelectedEvent {
+    plantId: string;
+    plantName: string;
   }
 
 export default function LocationDashboardPage() {
@@ -34,6 +51,11 @@ export default function LocationDashboardPage() {
     startDate: new Date(new Date().setDate(new Date().getDate() - 1)),
     endDate: new Date()
   });
+  const [selectedPlantSensor, setSelectedPlantSensor] = useState<{
+    sensorData: SensorData | null;
+    historicalData: SensorValue[];
+    chartData: PlantChartData;
+  } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -128,6 +150,71 @@ export default function LocationDashboardPage() {
       return () => clearInterval(interval);
     }
   }, [locationId]);
+
+  useEffect(() => {
+    const handlePlantSelected = async (e: Event) => {
+      const event = e as CustomEvent<PlantSelectedEvent>;
+      const plantId = event.detail.plantId;
+      
+      try {
+        const sensorsResponse = await sensorsService.getSensors();
+        const plantSensor = sensorsResponse.sensor?.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (          sensor: { in_plant_id: any; }) => sensor.in_plant_id === plantId
+        );
+  
+        if (!plantSensor) {
+          setSelectedPlantSensor(null);
+          return;
+        }
+  
+        const valuesResponse = await sensorsService.getSensorValues(
+          plantSensor.sn,
+          currentDateRange.startDate,
+          currentDateRange.endDate
+        );
+  
+        if (!valuesResponse.success || !valuesResponse.sensorvalue?.length) {
+          setSelectedPlantSensor(null);
+          return;
+        }
+  
+        const readings = valuesResponse.sensorvalue.map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
+          const parsed = JSON.parse(reading.SENSORDATAJSON);
+          return {
+            time: format(new Date(reading.CreateDateTime), 'HH:mm'),
+            soilTemp: parsed.SoilTemp ?? 0,
+            bulkEC: parsed.BulkEC ?? 0,
+            vwcRock: parsed.VWCRock ?? 0,
+            vwc: parsed.VWC ?? 0,
+            vwcCoco: parsed.VWCCoco ?? 0,
+            poreEC: parsed.PoreEC ?? 0
+          };
+        });
+  
+        setSelectedPlantSensor({
+          sensorData: JSON.parse(valuesResponse.sensorvalue[0].SENSORDATAJSON),
+          historicalData: valuesResponse.sensorvalue,
+          chartData: {
+            months: readings.map((r: { time: PlantReadingData; }) => r.time),
+            soilTempData: readings.map((r: { soilTemp: PlantReadingData; }) => Number(r.soilTemp) || 0),
+            bulkECData: readings.map((r: { bulkEC: PlantReadingData; }) => Number(r.bulkEC) || 0),
+            vwcRockData: readings.map((r: { vwcRock: PlantReadingData; }) => Number(r.vwcRock) || 0),
+            vwcData: readings.map((r: { vwc: PlantReadingData; }) => Number(r.vwc) || 0),
+            vwcCocoData: readings.map((r: { vwcCoco: PlantReadingData; }) => Number(r.vwcCoco) || 0),
+            poreECData: readings.map((r: { poreEC: PlantReadingData; }) => Number(r.poreEC) || 0)
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching plant sensor:', error);
+        setSelectedPlantSensor(null);
+      }
+    };
+  
+    window.addEventListener('plantSelected', handlePlantSelected);
+    return () => window.removeEventListener('plantSelected', handlePlantSelected);
+  }, [currentDateRange]);
+  
 
   const handleDateRangeChange = async (startDate: Date, endDate: Date) => {
     setCurrentDateRange({ startDate, endDate });
@@ -283,17 +370,34 @@ export default function LocationDashboardPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <EnvironmentWidget
-        sensorData={sensorData}
-        historicalData={historicalData}
-        error={error}
-      />
-      <ChartWidget 
-        data={chartData} 
-        onDateRangeChange={handleDateRangeChange}
-        isLoading={isLoading}
-        currentDateRange={currentDateRange}
-      />
-    </div>
+    <EnvironmentWidget
+      sensorData={sensorData}
+      historicalData={historicalData}
+      error={error}
+    />
+    <ChartWidget 
+      data={chartData} 
+      onDateRangeChange={handleDateRangeChange}
+      isLoading={isLoading}
+      currentDateRange={currentDateRange}
+    />
+
+    {selectedPlantSensor && (
+      <>
+        <PlantSensorWidget 
+          sensorData={selectedPlantSensor.sensorData}
+          historicalData={selectedPlantSensor.historicalData}
+          error={null}
+          title="Plant Environment"
+        />
+        <PlantSensorChart 
+          data={selectedPlantSensor.chartData}
+          title="Plant Data"
+          isLoading={isLoading}
+          currentDateRange={currentDateRange}
+        />
+      </>
+    )}
+  </div>
   );
 }

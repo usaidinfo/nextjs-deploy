@@ -78,7 +78,7 @@ const EnvironmentWidget: React.FC<EnvironmentWidgetProps> = ({
       unit: 'ppm',
       highest: co2MinMax.max.toFixed(0),
       lowest: co2MinMax.min.toFixed(0),
-    },
+    }
   ];
 
   return (

@@ -8,8 +8,10 @@ import HomeIcon from '@mui/icons-material/Home';
 import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
 import { locationService } from 'lib/services/location.service';
 import { plantService } from 'lib/services/plant.service';
+import { sensorsService } from 'lib/services/sensor.service';
 import type { Location } from 'lib/types/location';
 import type { Plant } from 'lib/types/plants';
+import type { Sensor } from 'lib/types/sensor';
 import { useRouter } from 'next/navigation';
 import CreateLocationModal from './modals/CreateLocationModal';
 import CreatePlantModal from './modals/CreatePlantModal';
@@ -17,12 +19,15 @@ import { LocationSkeleton } from './skeletons/LocationSkeleton';
 import { PlantSkeleton } from './skeletons/PlantSkeleton';
 import Image from 'next/image';
 
+interface LocationData {
+  plants: Plant[];
+  sensors: Sensor[];
+  isLoading: boolean;
+  error: string | null;
+}
+
 interface LocationPlants {
-  [key: string]: {
-    plants: Plant[];
-    isLoading: boolean;
-    error: string | null;
-  };
+  [key: string]: LocationData;
 }
 
 const Sidebar = () => {
@@ -37,48 +42,47 @@ const Sidebar = () => {
   const [showCreatePlantModal, setShowCreatePlantModal] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
 
+  const fetchLocations = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await locationService.getLocations();
 
-    const fetchLocations = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await locationService.getLocations();
-
-        if (response.success && response.locations) {
-          setLocations(response.locations);
-        } else {
-          setError(response.message || 'Failed to fetch locations');
-        }
-      } catch (err) {
-        console.error('Error fetching locations:', err);
-        setError('Failed to load locations. Please try again later.');
-      } finally {
-        setIsLoading(false);
+      if (response.success && response.locations) {
+        setLocations(response.locations);
+      } else {
+        setError(response.message || 'Failed to fetch locations');
       }
-    };
-
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const handleLocationCreated = () => {
-    fetchLocations();
+    } catch (err) {
+      console.error('Error fetching locations:', err);
+      setError('Failed to load locations. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const fetchPlants = async (locationId: string) => {
+  const fetchLocationData = async (locationId: string) => {
     try {
       setLocationPlants(prev => ({
         ...prev,
-        [locationId]: { plants: [], isLoading: true, error: null }
+        [locationId]: { plants: [], sensors: [], isLoading: true, error: null }
       }));
 
-      const response = await plantService.getPlants(Number(locationId));
+      const [plantsResponse, sensorsResponse] = await Promise.all([
+        plantService.getPlants(Number(locationId)),
+        sensorsService.getSensors()
+      ]);
 
-      if (response.success) {
+      const locationSensors = sensorsResponse.success ? 
+        sensorsResponse.sensor.filter((sensor: { location_id: string; }) => sensor.location_id === locationId) : 
+        [];
+
+      if (plantsResponse.success) {
         setLocationPlants(prev => ({
           ...prev,
           [locationId]: {
-            plants: response.plants,
+            plants: plantsResponse.plants,
+            sensors: locationSensors,
             isLoading: false,
             error: null
           }
@@ -88,36 +92,66 @@ const Sidebar = () => {
           ...prev,
           [locationId]: {
             plants: [],
+            sensors: locationSensors,
             isLoading: false,
-            error: response.message || 'Failed to fetch plants'
+            error: plantsResponse.message || 'Failed to fetch plants'
           }
         }));
       }
     } catch (error) {
-      console.log("error while fetching plants: ", error)
+      console.error("Error fetching location data: ", error);
       setLocationPlants(prev => ({
         ...prev,
         [locationId]: {
           plants: [],
+          sensors: [],
           isLoading: false,
-          error: 'Failed to load plants'
+          error: 'Failed to load location data'
         }
       }));
     }
   };
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
 
   const toggleLocation = async (locationId: string) => {
     const isExpanding = expandedLocation !== locationId;
     setExpandedLocation(isExpanding ? locationId : null);
 
     if (isExpanding && !locationPlants[locationId]) {
-      await fetchPlants(locationId);
+      await fetchLocationData(locationId);
     }
+  };
+
+  const handleLocationCreated = () => {
+    fetchLocations();
   };
 
   const handleLocationClick = (locationId: string) => {
     router.push(`/dashboard/${locationId}`);
     toggleLocation(locationId);
+  };
+
+  const handlePlantClick = (plant: Plant, locationId: string) => {
+    const locationData = locationPlants[locationId];
+    if (!locationData) return;
+
+    const plantSensor = locationData.sensors.find(
+      sensor => sensor.in_plant_id === plant.plant_id
+    );
+
+    window.dispatchEvent(new CustomEvent('plantSelected', {
+      detail: {
+        plantId: plant.plant_id,
+        plantName: plant.plant_name,
+        sensorInfo: plantSensor ? {
+          sn: plantSensor.sn,
+          addonSensor: plantSensor.sn_addonsensor
+        } : null
+      }
+    }));
   };
 
   const handleAddLocation = () => {
@@ -135,7 +169,7 @@ const Sidebar = () => {
     };
   
     window.addEventListener('locationDeleted', handleLocationDeleted);
-      return () => {
+    return () => {
       window.removeEventListener('locationDeleted', handleLocationDeleted);
     };
   }, []);
@@ -210,21 +244,25 @@ const Sidebar = () => {
                     </div>
                   ) : (
                     <>
-                          {locationPlants[location.location_id]?.plants?.map((plant: Plant) => (
-                            <button
-                              key={plant.plant_id}
-                              onClick={() => {
-                                window.dispatchEvent(new CustomEvent('plantSelected', {
-                                  detail: { plantId: plant.plant_id }
-                                }));
-                              }}
-                              className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-zinc-800/50 
-              transition-colors text-sm text-gray-300"
-                            >
+                      {locationPlants[location.location_id]?.plants.map((plant: Plant) => {
+                        const hasAddonSensor = locationPlants[location.location_id].sensors.some(
+                          sensor => sensor.in_plant_id === plant.plant_id && sensor.sn_addonsensor
+                        );
+                        
+                        return (
+                          <button
+                            key={plant.plant_id}
+                            onClick={() => handlePlantClick(plant, location.location_id)}
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-zinc-800/50 
+                              transition-colors text-sm ${hasAddonSensor ? 'text-green-400' : 'text-gray-300'}`}
+                          >
+                            <div className="flex items-center gap-2">
                               <LocalFloristIcon className="w-4 h-4" />
                               <span>{plant.plant_name}</span>
-                            </button>
-                          ))}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </>
                   )}
 
@@ -248,18 +286,18 @@ const Sidebar = () => {
       />
       {selectedLocationId && (
         <CreatePlantModal 
-        isOpen={showCreatePlantModal}
-        onClose={() => {
-          setShowCreatePlantModal(false);
-          setSelectedLocationId(null);
-        }}
-        onPlantCreated={() => {
-          if (selectedLocationId) {
-            fetchPlants(selectedLocationId);
-          }
-        }}
-        locationId={selectedLocationId || ''}
-      />
+          isOpen={showCreatePlantModal}
+          onClose={() => {
+            setShowCreatePlantModal(false);
+            setSelectedLocationId(null);
+          }}
+          onPlantCreated={() => {
+            if (selectedLocationId) {
+              fetchLocationData(selectedLocationId);
+            }
+          }}
+          locationId={selectedLocationId || ''}
+        />
       )}
     </div>
   );

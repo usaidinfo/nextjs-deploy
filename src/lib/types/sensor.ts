@@ -6,6 +6,12 @@ export interface SensorData {
   AirCO2: number;
   AirVPD: number;
   SensorType: number;
+  SoilTemp?: string;
+  BulkEC?: string;
+  VWCRock?: string;
+  VWC?: string;
+  VWCCoco?: string;
+  PoreEC?: string;
 }
 
 export interface SensorValue {
@@ -23,9 +29,7 @@ export interface Sensor {
   sn: string;
   location_id: string;
   in_location: string;
-}
-
-export interface SensorResponse {
-  success: boolean;
-  sensor: Sensor[];
+  in_plant_id: string | null;
+  plant_name: string | null;
+  sn_addonsensor: string | null;
 }
