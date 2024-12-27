@@ -19,6 +19,7 @@ export default function SelectSensorPage() {
   const addSensor = useDeviceStore((state) => state.addSensor);
   const scannedSensor = useDeviceStore((state) => state.scannedSensor);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (!scannedSensor) {
@@ -27,7 +28,7 @@ export default function SelectSensorPage() {
   }, [scannedSensor, router]);
 
   const handleContinue = async () => {
-    if (isLoading) return;
+    if (isLoading || isRedirecting) return;
 
     if (!scannedSensor) {
       setError('No sensor data available');
@@ -45,6 +46,7 @@ export default function SelectSensorPage() {
     }
   
     setIsLoading(true);
+    setIsRedirecting(true);
     try {
       const response = await sensorsService.addAddonSensor({
         sn: deviceSN,
@@ -67,6 +69,7 @@ export default function SelectSensorPage() {
     } catch (error) {
       console.log('error connecting sensor :', error)
       setError('Failed to connect sensor. Please try again.');
+      setIsRedirecting(false);
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +169,7 @@ export default function SelectSensorPage() {
 
         <button
           onClick={handleContinue}
-          disabled={isLoading}
+          disabled={isLoading || isRedirecting}
           className={`px-4 py-3 rounded-xl text-sm font-medium flex items-center ${(!scannedSensor.hasSubstrate || selectedSubstrate)
               ? isLoading
                 ? "bg-gray-300 text-gray-600"

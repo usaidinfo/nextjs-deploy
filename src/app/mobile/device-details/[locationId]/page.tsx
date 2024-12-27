@@ -171,6 +171,14 @@ if (showQRScanner) {
              </div>
              <div className="w-2/3 text-white">
                <div className="space-y-4">
+                {sensor.plantName && (
+                    <div>
+                      <p className="text-gray-400 text-sm">Plant</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{sensor.plantName}</p>
+                      </div>
+                    </div>
+                  )}
                  <div>
                    <p className="text-gray-400 text-sm">Sensor Type</p>
                    <p className="font-medium">{sensor.type}</p>
@@ -179,14 +187,6 @@ if (showQRScanner) {
                    <p className="text-gray-400 text-sm">SN Number</p>
                    <p className="font-medium">{sensor.sn}</p>
                  </div>
-                 {sensor.plantName && (
-                   <div>
-                     <p className="text-gray-400 text-sm">Plant</p>
-                     <div className="flex items-center gap-2">
-                       <p className="font-medium">{sensor.plantName}</p>
-                     </div>
-                   </div>
-                 )}
                  {sensor.substrate && (
                    <div>
                      <p className="text-gray-400 text-sm">Substrate</p>

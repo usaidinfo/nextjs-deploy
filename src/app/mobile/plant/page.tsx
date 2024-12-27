@@ -11,6 +11,7 @@ import { useDeviceStore } from 'lib/store/deviceStore';
 import { plantService } from 'lib/services/plant.service';
 import type { Plant } from 'lib/types/plants';
 import CreatePlantModal from '@components/dashboard/modals/CreatePlantModal';
+import { sensorsService } from 'lib/services/sensor.service';
 
 export default function PlantSelectPage() {
   const router = useRouter();
@@ -27,24 +28,29 @@ export default function PlantSelectPage() {
   const [selectionError, setSelectionError] = useState<string | null>(null);
   const [showPlantModal, setShowPlantModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const deviceSN = useDeviceStore(state => state.deviceSN);
 
 
 
-    const fetchPlants = async () => {
-      try {
-        const response = await plantService.getPlants(selectedLocation?.location_id);
-        if (response.success && response.plants) {
-          setPlants(response.plants);
-        } else {
-          setError(response.message || 'Failed to fetch plants');
-        }
-      } catch (err) {
-        console.error('error while loading plants: ', err)
-        setError('Failed to load plants');
-      } finally {
-        setIsLoading(false);
+  const fetchPlants = async () => {
+    setIsLoading(true); 
+    try {
+      const response = await plantService.getPlants(selectedLocation?.location_id);
+      if (response.success) {
+        setPlants(response.plants || []);
+        setError(null);
+      } else {
+        setError(response.message || 'Failed to fetch plants');
+        setPlants([]); 
       }
-    };
+    } catch (err) {
+      console.error('error while loading plants: ', err);
+      setError('Failed to load plants');
+      setPlants([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchPlants();
@@ -56,6 +62,8 @@ export default function PlantSelectPage() {
   };
 
   const handleContinue = async () => {
+    if (isSubmitting) return; 
+
     if (!selectedPlant) {
       setSelectionError('Please select a plant to continue');
       return;
@@ -63,12 +71,26 @@ export default function PlantSelectPage() {
   
     setIsSubmitting(true);
     try {
+      const response = await sensorsService.addSensorToPlant({
+        sn: deviceSN || '',
+        plant_id: Number(selectedPlant.plant_id)
+      });
+  
+      if (!response.success) {
+        setSelectionError(response.message || 'Failed to connect sensor to plant');
+        return;
+      }
+  
       const latestSensor = sensors[sensors.length - 1];
       updateLatestSensor({
         ...latestSensor,
         plantName: selectedPlant.plant_name
       });
+      
       router.push(`/mobile/device-details/${selectedLocation?.location_id}`);
+    } catch (error) {
+      console.error('Error adding sensor to plant:', error);
+      setSelectionError('Failed to connect sensor to plant');
     } finally {
       setIsSubmitting(false);
     }
@@ -154,8 +176,8 @@ export default function PlantSelectPage() {
       <CreatePlantModal
         isOpen={showPlantModal}
         onClose={() => setShowPlantModal(false)}
-        onPlantCreated={() => {
-          fetchPlants();
+        onPlantCreated={async () => {
+          await fetchPlants();
           setShowPlantModal(false);
         }}
         locationId={selectedLocation?.location_id || ''}

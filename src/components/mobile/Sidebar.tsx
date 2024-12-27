@@ -34,6 +34,8 @@ export default function MobileSidebar({ onClose }: Props) {
   const [locationPlants, setLocationPlants] = useState<LocationPlantsState>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
+  const [activePlantId, setActivePlantId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -93,18 +95,18 @@ export default function MobileSidebar({ onClose }: Props) {
 
   const handleLocationClick = (locationId: string) => {
     toggleLocation(locationId);
+    setActiveLocationId(locationId);
     router.push(`/mobile/dashboard/${locationId}`);
-    onClose();
   };
 
   const handlePlantClick = (plant: Plant) => {
+    setActivePlantId(plant.plant_id);
     window.dispatchEvent(new CustomEvent('plantSelected', {
       detail: {
         plantId: plant.plant_id,
         plantName: plant.plant_name
       }
     }));
-    onClose();
   };
 
   return (
@@ -130,7 +132,8 @@ export default function MobileSidebar({ onClose }: Props) {
               <div key={location.location_id}>
                 <button
                   onClick={() => handleLocationClick(location.location_id)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-zinc-800/50 transition-colors text-white"
+                  className={`w-full flex items-center justify-between p-3 rounded-xl hover:bg-zinc-800/50 transition-colors text-white
+                    ${activeLocationId === location.location_id ? 'bg-zinc-800/80 border border-zinc-700' : ''}`}
                 >
                   <div className="flex items-center gap-3">
                     <HomeIcon className="w-5 h-5" />
@@ -153,7 +156,8 @@ export default function MobileSidebar({ onClose }: Props) {
                                 <button
                                     key={plant.plant_id}
                                     onClick={() => handlePlantClick(plant)}
-                                    className={`w-full flex items-center gap-2 p-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-gray-300`}
+                                    className={`w-full flex items-center gap-2 p-2 rounded-lg hover:bg-zinc-800/50 transition-colors 
+                                      ${activePlantId === plant.plant_id ? 'bg-zinc-800/80 border border-zinc-700 text-white' : 'text-gray-300'}`}
                                 >
                                     <LocalFloristIcon className="w-4 h-4" />
                                     <span className="text-sm">{plant.plant_name}</span>

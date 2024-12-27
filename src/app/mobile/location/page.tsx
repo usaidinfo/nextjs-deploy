@@ -26,16 +26,20 @@ export default function LocationPage() {
   const [isCreatingSensor, setIsCreatingSensor] = useState(false);
 
   const fetchLocations = async () => {
+    setIsLoading(true);
     try {
       const response = await locationService.getLocations();
-      if (response.success && response.locations) {
-        setLocations(response.locations);
+      if (response.success) {
+        setLocations(response.locations || []);
+        setError(null);
       } else {
         setError(response.message || "Failed to fetch locations");
+        setLocations([]);
       }
     } catch (err) {
-      console.error('error while loading locations: ', err)
+      console.error('error while loading locations: ', err);
       setError("Failed to load locations");
+      setLocations([]);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +77,7 @@ export default function LocationPage() {
       if (createResponse.success) {
         router.push(`/mobile/device-details/${selectedLocation.location_id}`);
       } else {
-        setSelectionError(createResponse.message || 'Failed to register device');
+        setSelectionError(createResponse.message || 'Sensor is already existing');
       }
     } catch (err) {
       console.error('Error creating sensor:', err);
@@ -161,8 +165,8 @@ export default function LocationPage() {
       <CreateLocationModal
         isOpen={showLocationModal}
         onClose={() => setShowLocationModal(false)}
-        onLocationCreated={() => {
-          fetchLocations();
+        onLocationCreated={async () => {
+          await fetchLocations();
           setShowLocationModal(false);
         }}
       />

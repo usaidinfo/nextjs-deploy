@@ -71,6 +71,27 @@ class SensorsService {
     }
   }
 
+  async addSensorToPlant(data: { sn: string; plant_id: number }) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/sensor/add-sensor-plant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Token': token || '',
+        },
+        body: JSON.stringify(data)
+      });
+  
+      return await response.json();
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Failed to add sensor to plant' 
+      };
+    }
+  }
+
   async createSensor(data: { location_id: number; sn: string }) {
     try {
       const token = localStorage.getItem('token');
