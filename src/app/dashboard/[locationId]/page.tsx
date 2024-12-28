@@ -2,47 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import { withAuth } from "lib/utils/auth";
 import EnvironmentWidget from "@components/dashboard/widgets/EnvironmentWidget";
-import ChartWidget, { ChartData } from "@components/dashboard/widgets/EnvironmentChart";
+import ChartWidget from "@components/dashboard/widgets/EnvironmentChart";
 import { sensorsService } from 'lib/services/sensor.service';
-import type { SensorData, Sensor, SensorValue } from 'lib/types/sensor';
+import type { MainSensorWithData, PlantSensorWithData } from 'lib/types/sensor';
+import type { MainReadingData, PlantReadingData } from 'lib/types/environment';
 import { useParams } from 'next/navigation';
 import { EnvironmentWidgetSkeleton } from '@components/dashboard/skeletons/EnvironmentWidgetSkeleton';
 import { ChartWidgetSkeleton } from '@components/dashboard/skeletons/ChartWidgetSkeleton';
 import { format } from 'date-fns';
 import PlantSensorWidget from '@components/dashboard/widgets/PlantSensorWidget';
-import PlantSensorChart, { PlantChartData } from '@components/dashboard/widgets/PlantSensorChart';
+import PlantSensorChart from '@components/dashboard/widgets/PlantSensorChart';
 
-interface MainReadingData {
-  time: string;
-  temp: number;
-  humidity: number;
-  vpd: number;
-  co2: number;
-}
-
-interface PlantReadingData {
-  time: string;
-  soilTemp: number;
-  bulkEC: number;
-  vwcRock: number;
-  vwc: number;
-  vwcCoco: number;
-  poreEC: number;
-}
-
-interface PlantSensorWithData {
-  sensor: Sensor;
-  sensorData: SensorData | null;
-  chartData: PlantChartData;
-  historicalData: SensorValue[];
-}
-
-interface MainSensorWithData {
-  sensor: Sensor;
-  sensorData: SensorData | null;
-  chartData: ChartData;
-  historicalData: SensorValue[];
-}
 
 interface PlantSelectedEvent {
   plantId: string;
@@ -198,6 +168,12 @@ function LocationPage() {
           (          sensor: { in_plant_id: string; }) => sensor.in_plant_id === plantId
         );
 
+        console.log('Plant Sensor Data:', {
+          plant_soiltype: plantSensor?.plant_soiltype,
+          sensor_id: plantSensor?.sensor_id,
+          plant_name: plantSensor?.plant_name
+        });
+
         if (!plantSensor) {
           setSelectedPlantSensor(null);
           return;
@@ -211,7 +187,8 @@ function LocationPage() {
 
         setSelectedPlantSensor({
           sensor: plantSensor,
-          ...sensorData
+          ...sensorData,
+          plantSoilType: plantSensor.plant_soiltype
         });
       } catch (error) {
         console.error('Error fetching plant sensor:', error);
@@ -340,20 +317,22 @@ function LocationPage() {
             </>
           ) : (
             <>
-              <PlantSensorWidget 
-                sensorData={selectedPlantSensor.sensorData}
-                historicalData={selectedPlantSensor.historicalData}
-                error={null}
-                title={`${selectedPlantSensor.sensor.plant_name} Environment`}
-              />
-              <PlantSensorChart
-                data={selectedPlantSensor.chartData}
-                title={`${selectedPlantSensor.sensor.plant_name} Data`}
-                onDateRangeChange={handleDateRangeChange}
-                isLoading={isLoading}
-                currentDateRange={currentDateRange}
-              />
-            </>
+            <PlantSensorWidget 
+              sensorData={selectedPlantSensor.sensorData}
+              historicalData={selectedPlantSensor.historicalData}
+              error={null}
+              title="Plant Environment"
+              soilType={selectedPlantSensor.plantSoilType}
+            />
+            <PlantSensorChart 
+              data={selectedPlantSensor.chartData}
+              title="Plant Data"
+              isLoading={isLoading}
+              currentDateRange={currentDateRange}
+              sensorType={selectedPlantSensor.sensorData?.SensorType}
+              soilType={selectedPlantSensor.plantSoilType}
+            />
+          </>
           )}
         </div>
       )}

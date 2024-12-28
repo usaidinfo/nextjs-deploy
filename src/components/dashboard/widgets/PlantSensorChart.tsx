@@ -21,11 +21,15 @@ export interface PlantChartData {
   vwcData: number[];
   vwcCocoData: number[];
   poreECData: number[];
+  leafWetnessData?: number[];
+  leafTempData?: number[];
 }
 
 interface PlantSensorChartProps {
   data: PlantChartData;
   title?: string | null;
+  sensorType?: number;
+  soilType?: string;
   onDateRangeChange?: (startDate: Date, endDate: Date) => void;
   isLoading?: boolean;
   currentDateRange?: {
@@ -35,11 +39,10 @@ interface PlantSensorChartProps {
 }
 
 interface ChartPayloadEntry {
-  name: 'soilTemp' | 'bulkEC' | 'vwcRock' | 'vwc' | 'vwcCoco' | 'poreEC';
+  name: string;
   value: number;
   color: string;
-//   eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dataKey: any
+  dataKey: string;
 }
 
 interface CustomTooltipProps {
@@ -51,58 +54,103 @@ interface CustomTooltipProps {
 const PlantSensorChart: React.FC<PlantSensorChartProps> = ({ 
   data, 
   title, 
+  sensorType = 8,
+  soilType = '',
   isLoading = false,
   currentDateRange
 }) => {
+  const chartColors = {
+    soilTemp: 'rgba(214,57,57,1)',
+    bulkEC: 'rgba(107,47,209,1)',
+    vwcRock: 'rgba(21,128,61,1)',
+    vwc: 'rgba(21,128,61,1)',
+    vwc2: '107,47,209,1',
+    vwcCoco: 'rgba(21,128,61,1)',
+    poreEC: 'rgba(107,47,209,1)',
+    leafWetness: 'rgba(107,47,209,1)',
+    leafTemp: 'rgba(21,128,61,1)'
+  };
 
+  const getDisplayName = (key: string) => {
+    const names: Record<string, string> = {
+      soilTemp: 'Soil Temp',
+      bulkEC: 'Bulk EC',
+      vwcRock: 'VWC Rock',
+      vwc: 'VWC',
+      vwcCoco: 'VWC Coco',
+      poreEC: 'Pore EC',
+      leafWetness: 'Leaf Wetness',
+      leafTemp: 'Leaf Temp'
+    };
+    return names[key] || key;
+  };
 
-    const chartColors = {
-        soilTemp: 'rgba(214,57,57,1)',      // Dark Red
-        bulkEC: 'rgba(107,47,209,1)',       // Deep Purple
-        vwcRock: 'rgba(21,128,61,1)',       // Forest Green
-        vwc: 'rgba(30,64,175,1)',           // Royal Blue  
-        vwcCoco: 'rgba(202,138,4,1)',       // Deep Gold
-        poreEC: 'rgba(14,116,144,1)'        // Dark Cyan
-      };
+  const getUnit = (key: string) => {
+    const units: Record<string, string> = {
+      soilTemp: '°C',
+      bulkEC: 'mS/cm',
+      vwcRock: '%',
+      vwc: '%',
+      vwcCoco: '%',
+      poreEC: 'mS/cm',
+      leafWetness: '',
+      leafTemp: '°C'
+    };
+    return units[key] || '';
+  };
 
-  const hasData = data.months.length > 0;
+  const getChartLines = () => {
+    if (sensorType === 8) {
+      switch(soilType?.toLowerCase()) {
+        case 'organic':
+          return [
+            { key: 'poreEC', color: chartColors.poreEC },
+            { key: 'vwc', color: chartColors.vwc },
+            { key: 'soilTemp', color: chartColors.soilTemp }
+          ];
+        case 'coco':
+          return [
+            { key: 'bulkEC', color: chartColors.bulkEC },
+            { key: 'vwcCoco', color: chartColors.vwcCoco },
+            { key: 'soilTemp', color: chartColors.soilTemp }
+          ];
+        case 'stone':
+          return [
+            { key: 'bulkEC', color: chartColors.bulkEC },
+            { key: 'vwcRock', color: chartColors.vwcRock },
+            { key: 'soilTemp', color: chartColors.soilTemp }
+          ];
+        default:
+          return [];
+      }
+    }
 
+    if (sensorType === 15) {
+      return [
+        { key: 'leafWetness', color: chartColors.leafWetness },
+        { key: 'leafTemp', color: chartColors.leafTemp }
+      ];
+    }
+
+    if (sensorType === 16) {
+      return [{ key: 'vwc', color: chartColors.vwc2 }];
+    }
+
+    return [];
+  };
 
   const formatChartData = () => {
     return data.months.map((month, index) => ({
       time: month,
-      soilTemp: data.soilTempData[index],
+      poreEC: data.poreECData[index],
       bulkEC: data.bulkECData[index],
       vwcRock: data.vwcRockData[index],
       vwc: data.vwcData[index],
       vwcCoco: data.vwcCocoData[index],
-      poreEC: data.poreECData[index]
+      soilTemp: data.soilTempData[index],
+      leafWetness: data.leafWetnessData?.[index],
+      leafTemp: data.leafTempData?.[index]
     }));
-  };
-
-
-  const getUnit = (name: string) => {
-    switch(name) {
-      case 'soilTemp': return '°C';
-      case 'bulkEC':
-      case 'poreEC': return 'mS/cm';
-      case 'vwcRock':
-      case 'vwc':
-      case 'vwcCoco': return '%';
-      default: return '';
-    }
-  };
-
-  const getDisplayName = (name: string) => {
-    switch(name) {
-      case 'soilTemp': return 'Soil Temp';
-      case 'bulkEC': return 'Bulk EC';
-      case 'vwcRock': return 'VWC Rock';
-      case 'vwc': return 'VWC';
-      case 'vwcCoco': return 'VWC Coco';
-      case 'poreEC': return 'Pore EC';
-      default: return name;
-    }
   };
 
   const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
@@ -110,7 +158,7 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
       return (
         <div className="bg-zinc-900/90 border border-zinc-700 rounded-lg p-2">
           <p className="text-white text-sm font-medium mb-1">{label}</p>
-          {payload.map((entry: ChartPayloadEntry) => {
+          {payload.map((entry) => {
             const value = Number(entry.value);
             if (isNaN(value)) return null;
             
@@ -135,14 +183,18 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
     return null;
   };
 
+  const chartLines = getChartLines();
+  const hasData = data.months.length > 0;
+
   return (
     <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 xl:w-3/5">
       <div className="mb-3 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-white">{title || 'Plant Sensor Data'}</h2>
           <p className="text-white text-sm">
-          {format(currentDateRange?.startDate || new Date(), 'MMM dd, yyyy')} - 
-          {format(currentDateRange?.endDate || new Date(), 'MMM dd, yyyy')}          </p>
+            {format(currentDateRange?.startDate || new Date(), 'MMM dd, yyyy')} - 
+            {format(currentDateRange?.endDate || new Date(), 'MMM dd, yyyy')}
+          </p>
         </div>
       </div>
       
@@ -150,7 +202,7 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
         <div className="h-[300px] flex items-center justify-center text-white">
           Loading chart data...
         </div>
-      ) : !hasData ? (
+      ) : !hasData || chartLines.length === 0 ? (
         <div className="h-[300px] flex items-center justify-center text-white">
           No data available for selected date range
         </div>
@@ -185,48 +237,16 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
               content={<CustomTooltip />}
               cursor={false}
             />
-            <Line
-              type="monotoneX"
-              dataKey="soilTemp"
-              stroke={chartColors.soilTemp}
-              dot={false}
-              strokeWidth={2}
-            />
-            <Line
-              type="monotoneX"
-              dataKey="bulkEC"
-              stroke={chartColors.bulkEC}
-              dot={false}
-              strokeWidth={2}
-            />
-            <Line
-              type="monotoneX"
-              dataKey="vwcRock"
-              stroke={chartColors.vwcRock}
-              dot={false}
-              strokeWidth={2}
-            />
-            <Line
-              type="monotoneX"
-              dataKey="vwc"
-              stroke={chartColors.vwc}
-              dot={false}
-              strokeWidth={2}
-            />
-            <Line
-              type="monotoneX"
-              dataKey="vwcCoco"
-              stroke={chartColors.vwcCoco}
-              dot={false}
-              strokeWidth={2}
-            />
-            <Line
-              type="monotoneX"
-              dataKey="poreEC"
-              stroke={chartColors.poreEC}
-              dot={false}
-              strokeWidth={2}
-            />
+            {chartLines.map(line => (
+              <Line
+                key={line.key}
+                type="monotoneX"
+                dataKey={line.key}
+                stroke={line.color}
+                dot={false}
+                strokeWidth={2}
+              />
+            ))}
           </LineChart>
         </ResponsiveContainer>
       )}

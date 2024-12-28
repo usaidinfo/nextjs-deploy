@@ -1,4 +1,9 @@
+import { ChartData } from "@components/dashboard/widgets/EnvironmentChart";
+import { PlantChartData } from "@components/dashboard/widgets/PlantSensorChart";
+
 export interface SensorData {
+  LeafWetness: string;
+  LeafTemp: string;
   LCSN: string;
   LCFW: string;
   AirHum: number;
@@ -31,5 +36,21 @@ export interface Sensor {
   in_location: string;
   in_plant_id: string | null;
   plant_name: string | null;
+  plant_soiltype: string | null;
   sn_addonsensor: string | null;
+}
+
+export interface PlantSensorWithData {
+  sensor: Sensor;
+  sensorData: SensorData | null;
+  chartData: PlantChartData;
+  historicalData: SensorValue[];
+  plantSoilType?: string;
+}
+
+export interface MainSensorWithData {
+  sensor: Sensor;
+  sensorData: SensorData | null;
+  chartData: ChartData;
+  historicalData: SensorValue[];
 }

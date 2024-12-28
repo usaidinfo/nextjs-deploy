@@ -175,20 +175,17 @@ class SensorsService {
 
   async validateAddSensorQRData(qrData: string) {
     try {
-      // Parse the URL from QR code
       const url = new URL(qrData);
       if (!url.hostname.includes('leafai')) {
         return { isValid: false, error: 'Invalid sensor QR code' };
       }
   
-      // Extract serial number from URL
       const pathSegments = url.pathname.split('/').filter(Boolean);
       const sn = pathSegments[pathSegments.length - 1];
       if (!sn) {
         return { isValid: false, error: 'Invalid serial number' };
       }
   
-      // Validate sensor info
       const snValidation = await this.getSNInfo(sn);
       
       if (snValidation.success && snValidation.info?.[0]) {

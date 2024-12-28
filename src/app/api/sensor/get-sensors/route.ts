@@ -1,3 +1,4 @@
+// src/app/api/sensor/get-sensors/route.ts
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
