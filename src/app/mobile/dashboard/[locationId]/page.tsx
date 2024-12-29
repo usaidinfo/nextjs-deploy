@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import EnvironmentWidget from '@components/dashboard/widgets/EnvironmentWidget';
 import ChartWidget from '@components/dashboard/widgets/EnvironmentChart';
 import { sensorsService } from 'lib/services/sensor.service';
-import type { MainSensorWithData, PlantSensorWithData } from 'lib/types/sensor';
+import type { MainSensorWithData, PlantSensorWithData, SensorValue } from 'lib/types/sensor';
 import type { MainReadingData, PlantReadingData } from 'lib/types/environment';
 import { format } from 'date-fns';
 import PlantSensorChart from '@components/dashboard/widgets/PlantSensorChart';
@@ -27,40 +27,61 @@ export default function LocationDashboardPage() {
     endDate: new Date()
   });
 
-  const fetchSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected = false) => {
+  const fetchSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
     const valuesResponse = await sensorsService.getSensorValues(sensorSN, startDate, endDate);
     
     if (!valuesResponse.success || !valuesResponse.sensorvalue?.length) {
       throw new Error('No sensor data available');
     }
-  
-    const readings = valuesResponse.sensorvalue.map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
-      const parsed = JSON.parse(reading.SENSORDATAJSON);
-      return {
-        time: format(new Date(reading.CreateDateTime), 
-          isDateRangeSelected ? 'MMM dd HH:mm' : 'HH:mm'
-        ),
-        temp: parsed.AirTemp,
-        humidity: parsed.AirHum,
-        vpd: parsed.AirVPD,
-        co2: parsed.AirCO2
-      };
-    });
-  
-    readings.sort((a: { CreateDateTime: string | number | Date; }, b: { CreateDateTime: string | number | Date; }) => 
+
+    const allReadings = valuesResponse.sensorvalue.sort((a: SensorValue, b: SensorValue) => 
       new Date(b.CreateDateTime).getTime() - new Date(a.CreateDateTime).getTime()
     );
   
+    let filteredReadings: SensorValue[];
+    if (!isDateRangeSelected) {
+      const mostRecentReading = allReadings[0];
+      const mostRecentTime = new Date(mostRecentReading.CreateDateTime);
+      const fourHoursBeforeMostRecent = new Date(mostRecentTime.getTime() - (4 * 60 * 60 * 1000));
+  
+      filteredReadings = allReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
+        const readingTime = new Date(reading.CreateDateTime);
+        return readingTime >= fourHoursBeforeMostRecent && readingTime <= mostRecentTime;
+      });
+    } else {
+      filteredReadings = allReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
+        const readingTime = new Date(reading.CreateDateTime);
+        return readingTime >= startDate && readingTime <= endDate;
+      });
+    }
+  
+    const readings = filteredReadings
+      .map(reading => {
+        const parsed = JSON.parse(reading.SENSORDATAJSON);
+        const readingDateTime = new Date(reading.CreateDateTime);
+        
+        return {
+          time: format(readingDateTime, 
+            isDateRangeSelected ? 'MMM dd HH:mm' : 'HH:mm'
+          ),
+          temp: parsed.AirTemp,
+          humidity: parsed.AirHum,
+          vpd: parsed.AirVPD,
+          co2: parsed.AirCO2
+        } as MainReadingData;
+      })
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+  
     return {
-      sensorData: JSON.parse(valuesResponse.sensorvalue[0].SENSORDATAJSON),
+      sensorData: JSON.parse(allReadings[0].SENSORDATAJSON),
       chartData: {
-        months: readings.map((r: { time: MainReadingData; }) => r.time),
-        tempData: readings.map((r: { temp: MainReadingData; }) => r.temp),
-        humidityData: readings.map((r: { humidity: MainReadingData; }) => r.humidity),
-        vpdData: readings.map((r: { vpd: MainReadingData; }) => r.vpd),
-        co2Data: readings.map((r: { co2: MainReadingData; }) => r.co2)
+        months: readings.map(r => r.time),
+        tempData: readings.map(r => r.temp),
+        humidityData: readings.map(r => r.humidity),
+        vpdData: readings.map(r => r.vpd),
+        co2Data: readings.map(r => r.co2)
       },
-      historicalData: valuesResponse.sensorvalue
+      historicalData: allReadings
     };
   };
 
