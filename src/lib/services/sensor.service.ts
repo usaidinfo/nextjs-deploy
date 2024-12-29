@@ -41,12 +41,14 @@ class SensorsService {
   }
 
   async getSensorValues(sn: string, startDate?: Date, endDate?: Date, locationId?: string) {
+
+    const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : undefined;
+    const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : undefined;
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         return { success: false, message: 'No authentication token found' };
       }
-  
       const response = await fetch(`${this.baseUrl}/get-sensor-values`, {
         method: 'POST',
         headers: {
@@ -55,12 +57,11 @@ class SensorsService {
         },
         body: JSON.stringify({ 
           sn,
-          start: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
-          end: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
+          start: formattedStartDate,
+          end: formattedEndDate,
           location_id: locationId
         })
       });
-  
       return await response.json();
     } catch (error) {
       return { 

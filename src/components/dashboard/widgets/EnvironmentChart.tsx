@@ -50,13 +50,13 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
   data, 
   title, 
   onDateRangeChange,
-  isLoading = false ,
-  currentDateRange
+  isLoading = false,
+  currentDateRange 
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState([
     {
-      startDate: new Date(new Date().setDate(new Date().getDate() - 1)),
+      startDate: new Date(new Date().setHours(new Date().getHours() - 4)),
       endDate: new Date(),
       key: 'selection'
     }
@@ -90,6 +90,17 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
     }
   }, [currentDateRange]);
 
+  useEffect(() => {
+    // Only trigger initial data load if no currentDateRange is provided
+    if (!currentDateRange && onDateRangeChange) {
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setHours(endDate.getHours() - 4);
+      
+      onDateRangeChange(startDate, endDate);
+    }
+  }, [currentDateRange, onDateRangeChange]);
+
   const formatChartData = () => {
     return data.months.map((month, index) => ({
       time: month,
@@ -101,16 +112,23 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
   };
 
   const handleDateRangeChange = (ranges: RangeKeyDict) => {
+    if (!ranges.selection.startDate || !ranges.selection.endDate) return;
+
     const newRange = [{
-      startDate: ranges.selection.startDate || new Date(),
-      endDate: ranges.selection.endDate || new Date(),
+      startDate: ranges.selection.startDate,
+      endDate: ranges.selection.endDate,
       key: 'selection'
     }];
+    
     setDateRange(newRange);
     setShowDatePicker(false);
     
-    if (onDateRangeChange && ranges.selection.startDate && ranges.selection.endDate) {
-      onDateRangeChange(ranges.selection.startDate, ranges.selection.endDate);
+    if (onDateRangeChange) {
+      // Ensure endDate includes the full day
+      const endDate = new Date(ranges.selection.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      
+      onDateRangeChange(ranges.selection.startDate, endDate);
     }
   };
 
@@ -144,12 +162,12 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
   };
 
   return (
-    <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 xl:w-3/5">
+    <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5">
       <div className="mb-3 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-white">{title || 'Environment'}</h2>
           <p className="text-white text-sm">
-            {format(dateRange[0].startDate, 'MMM dd, yyyy')} - {format(dateRange[0].endDate, 'MMM dd, yyyy')}
+            {format(dateRange[0].startDate, 'MMM dd, yyyy HH:mm')} - {format(dateRange[0].endDate, 'MMM dd, yyyy HH:mm')}
           </p>
         </div>
         <div className="relative">
