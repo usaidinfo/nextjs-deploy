@@ -13,12 +13,10 @@ import { format } from 'date-fns';
 import PlantSensorWidget from '@components/dashboard/widgets/PlantSensorWidget';
 import PlantSensorChart from '@components/dashboard/widgets/PlantSensorChart';
 
-
 interface PlantSelectedEvent {
   plantId: string;
   plantName: string;
 }
-
 
 function LocationPage() {
   const { locationId } = useParams();
@@ -90,7 +88,9 @@ function LocationPage() {
         vwcRock: parsed.VWCRock ?? 0,
         vwc: parsed.VWC ?? 0,
         vwcCoco: parsed.VWCCoco ?? 0,
-        poreEC: parsed.PoreEC ?? 0
+        poreEC: parsed.PoreEC ?? 0,
+        leafWetness: parsed.LeafWetness ?? 0,
+        leafTemp: parsed.LeafTemp ?? 0
       };
     });
   
@@ -107,7 +107,9 @@ function LocationPage() {
         vwcRockData: readings.map((r: { vwcRock: PlantReadingData; }) => Number(r.vwcRock) || 0),
         vwcData: readings.map((r: { vwc: PlantReadingData; }) => Number(r.vwc) || 0),
         vwcCocoData: readings.map((r: { vwcCoco: PlantReadingData; }) => Number(r.vwcCoco) || 0),
-        poreECData: readings.map((r: { poreEC: PlantReadingData; }) => Number(r.poreEC) || 0)
+        poreECData: readings.map((r: { poreEC: PlantReadingData; }) => Number(r.poreEC) || 0),
+        leafWetnessData: readings.map((r: { leafWetness: PlantReadingData; }) => Number(r.leafWetness) || 0),
+        leafTempData: readings.map((r: { leafTemp: PlantReadingData; }) => Number(r.leafTemp) || 0)
       },
       historicalData: valuesResponse.sensorvalue
     };
@@ -168,11 +170,6 @@ function LocationPage() {
           (          sensor: { in_plant_id: string; }) => sensor.in_plant_id === plantId
         );
 
-        console.log('Plant Sensor Data:', {
-          plant_soiltype: plantSensor?.plant_soiltype,
-          sensor_id: plantSensor?.sensor_id,
-          plant_name: plantSensor?.plant_name
-        });
 
         if (!plantSensor) {
           setSelectedPlantSensor(null);
@@ -317,22 +314,22 @@ function LocationPage() {
             </>
           ) : (
             <>
-            <PlantSensorWidget 
-              sensorData={selectedPlantSensor.sensorData}
-              historicalData={selectedPlantSensor.historicalData}
-              error={null}
-              title="Plant Environment"
-              soilType={selectedPlantSensor.plantSoilType}
-            />
-            <PlantSensorChart 
-              data={selectedPlantSensor.chartData}
-              title="Plant Data"
-              isLoading={isLoading}
-              currentDateRange={currentDateRange}
-              sensorType={selectedPlantSensor.sensorData?.SensorType}
-              soilType={selectedPlantSensor.plantSoilType}
-            />
-          </>
+              <PlantSensorWidget 
+                sensorData={selectedPlantSensor.sensorData}
+                historicalData={selectedPlantSensor.historicalData}
+                error={null}
+                title="Plant Environment"
+                soilType={selectedPlantSensor.plantSoilType}
+              />
+              <PlantSensorChart 
+                data={selectedPlantSensor.chartData}
+                title="Plant Data"
+                isLoading={isLoading}
+                currentDateRange={currentDateRange}
+                sensorType={selectedPlantSensor.sensorData?.SensorType}
+                soilType={selectedPlantSensor.plantSoilType}
+              />
+            </>
           )}
         </div>
       )}

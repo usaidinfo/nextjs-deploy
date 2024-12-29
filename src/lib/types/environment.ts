@@ -14,4 +14,6 @@ export interface PlantReadingData {
     vwc: number;
     vwcCoco: number;
     poreEC: number;
+    leafWetness: number;
+    leafTemp: number;
   }
