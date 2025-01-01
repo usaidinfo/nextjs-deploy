@@ -67,21 +67,25 @@ const Sidebar = () => {
         ...prev,
         [locationId]: { plants: [], sensors: [], isLoading: true, error: null }
       }));
-
+  
       const [plantsResponse, sensorsResponse] = await Promise.all([
-        plantService.getPlants(Number(locationId)),
+        plantService.getPlants(),
         sensorsService.getSensors()
       ]);
-
+  
       const locationSensors = sensorsResponse.success ? 
         sensorsResponse.sensor.filter((sensor: { location_id: string; }) => sensor.location_id === locationId) : 
         [];
-
-      if (plantsResponse.success) {
+  
+      if (plantsResponse.success && plantsResponse.plants) {
+        const locationPlants = plantsResponse.plants.filter(
+          (          plant: { location_id: string; }) => plant.location_id === locationId
+        );
+  
         setLocationPlants(prev => ({
           ...prev,
           [locationId]: {
-            plants: plantsResponse.plants,
+            plants: locationPlants,
             sensors: locationSensors,
             isLoading: false,
             error: null

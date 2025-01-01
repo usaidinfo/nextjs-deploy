@@ -24,10 +24,15 @@ function LocationPage() {
   const [selectedPlantSensor, setSelectedPlantSensor] = useState<PlantSensorWithData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentDateRange, setCurrentDateRange] = useState({
+  const [currentDateRange] = useState({
     startDate: new Date(new Date().setDate(new Date().getDate() - 1)),
     endDate: new Date()
   });
+  const [displayDateRange, setDisplayDateRange] = useState({
+    startDate: new Date(new Date().setHours(new Date().getHours() - 4)),
+    endDate: new Date()
+  });
+
 
   const fetchSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
     const valuesResponse = await sensorsService.getSensorValues(sensorSN, startDate, endDate);
@@ -35,57 +40,62 @@ function LocationPage() {
     if (!valuesResponse.success || !valuesResponse.sensorvalue?.length) {
       throw new Error('No sensor data available');
     }
-
+  
     const allReadings = valuesResponse.sensorvalue.sort((a: SensorValue, b: SensorValue) => 
       new Date(b.CreateDateTime).getTime() - new Date(a.CreateDateTime).getTime()
-    );
+    )
   
-    let filteredReadings: SensorValue[];
-    if (!isDateRangeSelected) {
-      const mostRecentReading = allReadings[0];
-      const mostRecentTime = new Date(mostRecentReading.CreateDateTime);
-      const fourHoursBeforeMostRecent = new Date(mostRecentTime.getTime() - (4 * 60 * 60 * 1000));
+    const mostRecentReading = allReadings[0];
+    const mostRecentTime = new Date(mostRecentReading.CreateDateTime);
+    const fourHoursBeforeMostRecent = new Date(mostRecentTime.getTime() - (4 * 60 * 60 * 1000));
   
-      filteredReadings = allReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
-        const readingTime = new Date(reading.CreateDateTime);
-        return readingTime >= fourHoursBeforeMostRecent && readingTime <= mostRecentTime;
-      });
-    } else {
-      filteredReadings = allReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
-        const readingTime = new Date(reading.CreateDateTime);
-        return readingTime >= startDate && readingTime <= endDate;
-      });
+    const filteredReadings = isDateRangeSelected
+      ? allReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
+          const readingTime = new Date(reading.CreateDateTime);
+          const rangeStartTime = new Date(startDate);
+          rangeStartTime.setHours(0, 0, 0, 0);
+          const rangeEndTime = new Date(endDate);
+          rangeEndTime.setHours(23, 59, 59, 999);
+          return readingTime >= rangeStartTime && readingTime <= rangeEndTime;
+        })
+      : allReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
+          const readingTime = new Date(reading.CreateDateTime);
+          return readingTime >= fourHoursBeforeMostRecent && readingTime <= mostRecentTime;
+        });
+  
+    if (filteredReadings.length === 0) {
+      throw new Error('No data available for selected time range');
     }
   
     const readings = filteredReadings
-      .map(reading => {
+      .map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
         const parsed = JSON.parse(reading.SENSORDATAJSON);
         const readingDateTime = new Date(reading.CreateDateTime);
         
         return {
-          time: format(readingDateTime, 
-            isDateRangeSelected ? 'MMM dd HH:mm' : 'HH:mm'
-          ),
+          time: format(readingDateTime, isDateRangeSelected ? 'MMM dd HH:mm' : 'HH:mm'),
           temp: parsed.AirTemp,
           humidity: parsed.AirHum,
           vpd: parsed.AirVPD,
           co2: parsed.AirCO2
         } as MainReadingData;
       })
-      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
-  
+      .sort((a: { time: string | number | Date; }, b: { time: string | number | Date; }) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      .reverse()
+      
     return {
       sensorData: JSON.parse(allReadings[0].SENSORDATAJSON),
       chartData: {
-        months: readings.map(r => r.time),
-        tempData: readings.map(r => r.temp),
-        humidityData: readings.map(r => r.humidity),
-        vpdData: readings.map(r => r.vpd),
-        co2Data: readings.map(r => r.co2)
+        months: readings.map((r: { time: MainReadingData; }) => r.time),
+        tempData: readings.map((r: { temp: MainReadingData; }) => r.temp),
+        humidityData: readings.map((r: { humidity: MainReadingData; }) => r.humidity),
+        vpdData: readings.map((r: { vpd: MainReadingData; }) => r.vpd),
+        co2Data: readings.map((r: { co2: MainReadingData; }) => r.co2)
       },
       historicalData: allReadings
     };
   };
+  
 
   const fetchPlantSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
     const valuesResponse = await sensorsService.getSensorValues(
@@ -117,7 +127,7 @@ function LocationPage() {
   
     readings.sort((a: { CreateDateTime: string | number | Date; }, b: { CreateDateTime: string | number | Date; }) => 
       new Date(b.CreateDateTime).getTime() - new Date(a.CreateDateTime).getTime()
-    );
+    )
   
     return {
       sensorData: JSON.parse(valuesResponse.sensorvalue[0].SENSORDATAJSON),
@@ -175,7 +185,7 @@ function LocationPage() {
 
     if (locationId) {
       fetchData();
-      const interval = setInterval(fetchData, 60000);
+      const interval = setInterval(fetchData, 600000);
       return () => clearInterval(interval);
     }
   }, [locationId, currentDateRange]);
@@ -219,26 +229,19 @@ function LocationPage() {
   }, [currentDateRange]);
 
   const handleDateRangeChange = async (startDate: Date, endDate: Date) => {
-    setCurrentDateRange({ startDate, endDate });
+    if (!mainSensor) return;
     setIsLoading(true);
+
+    setDisplayDateRange({ startDate, endDate });
     
     try {
-      const sensorsResponse = await sensorsService.getSensors();
-      const locationSensor = sensorsResponse.sensor?.find(
-        (        sensor: { location_id: string | string[] | undefined; }) => sensor.location_id === locationId
-      );
-  
-      if (!locationSensor) {
-        setError('No sensor found for this location');
-        return;
-      }
-  
       const mainSensorData = await fetchSensorData(
-        locationSensor.sn, 
+        mainSensor.sensor.sn, 
         startDate,
         endDate,
         true
       );
+      
       setMainSensor(prev => prev ? {
         ...prev,
         ...mainSensorData
@@ -249,16 +252,19 @@ function LocationPage() {
           selectedPlantSensor.sensor.sn,
           startDate,
           endDate,
-          true 
+          true
         );
         setSelectedPlantSensor(prev => prev ? {
           ...prev,
           ...plantSensorData
         } : null);
       }
-    } catch (error) {
-      console.error('Error updating chart data:', error);
-      setError('Failed to fetch updated data');
+      
+    } catch (error: unknown) {
+      if (error instanceof Error && !error.message.includes('No data available for selected time range')) {
+        setError(error.message || 'Failed to fetch updated data');
+      }
+      setMainSensor(prev => prev);
     } finally {
       setIsLoading(false);
     }
@@ -310,7 +316,7 @@ function LocationPage() {
           data={mainSensor.chartData}
           onDateRangeChange={handleDateRangeChange}
           isLoading={isLoading}
-          currentDateRange={currentDateRange}
+          currentDateRange={displayDateRange}
         />
       </div>
 

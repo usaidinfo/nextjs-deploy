@@ -1,14 +1,12 @@
 class PlantService {
     private baseUrl = '/api/plants';
   
-    async getPlants(locationId: number) {
+    async getPlants() {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
           return { success: false, message: 'No authentication token found' };
         }
-  
-        const today = new Date().toISOString().split('T')[0];
   
         const response = await fetch(`${this.baseUrl}/get-plants`, {
           method: 'POST',
@@ -16,22 +14,25 @@ class PlantService {
             'Content-Type': 'application/json',
             'Token': token,
           },
-          body: JSON.stringify({
-            location_id: locationId,
-            start: today, 
-            end: today 
-          })
+          body: JSON.stringify({})
         });
   
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
   
-        return await response.json();
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to fetch plants');
+        }
+  
+        return data;
       } catch (error) {
         return { 
           success: false, 
-          message: error instanceof Error ? error.message : 'Failed to fetch plants' 
+          message: error instanceof Error ? error.message : 'Failed to fetch plants',
+          plants: []
         };
       }
     }

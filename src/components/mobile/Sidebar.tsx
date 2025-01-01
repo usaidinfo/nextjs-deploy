@@ -60,18 +60,30 @@ export default function MobileSidebar({ onClose }: Props) {
 
   const fetchPlants = async (locationId: string) => {
     try {
-      const response = await plantService.getPlants(Number(locationId));
+      const response = await plantService.getPlants();
       if (response.success && response.plants) {
+        const locationPlants = response.plants.filter(
+          (          plant: { location_id: string; }) => plant.location_id === locationId
+        );
+
         setLocationPlants(prev => ({
           ...prev,
           [locationId]: {
-            plants: response.plants,
+            plants: locationPlants,
             error: null
+          }
+        }));
+      } else {
+        setLocationPlants(prev => ({
+          ...prev,
+          [locationId]: {
+            plants: [],
+            error: response.message || 'Failed to fetch plants'
           }
         }));
       }
     } catch (err) {
-      console.error('error fetching plants: ', err)
+      console.error('error fetching plants: ', err);
       setLocationPlants(prev => ({
         ...prev,
         [locationId]: {
@@ -104,7 +116,9 @@ export default function MobileSidebar({ onClose }: Props) {
     window.dispatchEvent(new CustomEvent('plantSelected', {
       detail: {
         plantId: plant.plant_id,
-        plantName: plant.plant_name
+        plantName: plant.plant_name,
+        locationId: plant.location_id,
+        locationName: plant.location_name
       }
     }));
   };

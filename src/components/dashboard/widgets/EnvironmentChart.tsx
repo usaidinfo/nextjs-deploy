@@ -91,7 +91,6 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
   }, [currentDateRange]);
 
   useEffect(() => {
-    // Only trigger initial data load if no currentDateRange is provided
     if (!currentDateRange && onDateRangeChange) {
       const endDate = new Date();
       const startDate = new Date(endDate);
@@ -124,7 +123,6 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
     setShowDatePicker(false);
     
     if (onDateRangeChange) {
-      // Ensure endDate includes the full day
       const endDate = new Date(ranges.selection.endDate);
       endDate.setHours(23, 59, 59, 999);
       
@@ -199,7 +197,10 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
         </div>
       ) : !hasData ? (
         <div className="h-[300px] flex items-center justify-center text-white">
-          No data available for selected date range
+          <div className="text-center">
+            <p>No data available for selected date range</p>
+            <p className="text-sm text-gray-400 mt-2">Try selecting a different date range</p>
+          </div>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={300}>

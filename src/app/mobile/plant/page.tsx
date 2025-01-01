@@ -33,15 +33,19 @@ export default function PlantSelectPage() {
 
 
   const fetchPlants = async () => {
-    setIsLoading(true); 
+    setIsLoading(true);
     try {
-      const response = await plantService.getPlants(selectedLocation?.location_id);
+      const response = await plantService.getPlants();
       if (response.success) {
-        setPlants(response.plants || []);
+        const locationPlants = response.plants?.filter(
+          (          plant: { location_id: string; }) => plant.location_id === selectedLocation?.location_id
+        ) || [];
+        
+        setPlants(locationPlants);
         setError(null);
       } else {
         setError(response.message || 'Failed to fetch plants');
-        setPlants([]); 
+        setPlants([]);
       }
     } catch (err) {
       console.error('error while loading plants: ', err);
@@ -51,9 +55,11 @@ export default function PlantSelectPage() {
       setIsLoading(false);
     }
   };
-
+  
   useEffect(() => {
-    fetchPlants();
+    if (selectedLocation?.location_id) {
+      fetchPlants();
+    }
   }, [selectedLocation?.location_id]);
 
   const handlePlantSelect = (plant: Plant) => {
@@ -177,8 +183,10 @@ export default function PlantSelectPage() {
         isOpen={showPlantModal}
         onClose={() => setShowPlantModal(false)}
         onPlantCreated={async () => {
-          await fetchPlants();
-          setShowPlantModal(false);
+          if (selectedLocation?.location_id) {
+            await fetchPlants();
+            setShowPlantModal(false);
+          }
         }}
         locationId={selectedLocation?.location_id || ''}
       />

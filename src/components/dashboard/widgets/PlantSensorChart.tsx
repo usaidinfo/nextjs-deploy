@@ -1,6 +1,5 @@
 'use client';
 import React from 'react';
-import { format } from 'date-fns';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { 
@@ -57,7 +56,6 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   sensorType = 8,
   soilType = '',
   isLoading = false,
-  currentDateRange
 }) => {
   const chartColors = {
     soilTemp: 'rgba(214,57,57,1)',
@@ -191,10 +189,6 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
       <div className="mb-3 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-white">{title || 'Plant Sensor Data'}</h2>
-          <p className="text-white text-sm">
-            {format(currentDateRange?.startDate || new Date(), 'MMM dd, yyyy')} - 
-            {format(currentDateRange?.endDate || new Date(), 'MMM dd, yyyy')}
-          </p>
         </div>
       </div>
       
