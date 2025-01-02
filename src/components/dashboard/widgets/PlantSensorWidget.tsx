@@ -124,7 +124,7 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
     if (sensorType === 15) {
       return [
         {
-          label: 'Leaf Wetness',
+          label: 'Leaf Wtns',
           value: sensorData.LeafWetness || '0',
           unit: '%',
           key: 'LeafWetness'

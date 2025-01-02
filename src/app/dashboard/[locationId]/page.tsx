@@ -4,7 +4,7 @@ import { withAuth } from "lib/utils/auth";
 import EnvironmentWidget from "@components/dashboard/widgets/EnvironmentWidget";
 import ChartWidget from "@components/dashboard/widgets/EnvironmentChart";
 import { sensorsService } from 'lib/services/sensor.service';
-import type { MainSensorWithData, PlantSensorWithData, SensorValue } from 'lib/types/sensor';
+import type { MainSensorWithData, PlantSensorWithData, Sensor, SensorValue } from 'lib/types/sensor';
 import type { MainReadingData, PlantReadingData } from 'lib/types/environment';
 import { useParams } from 'next/navigation';
 import { EnvironmentWidgetSkeleton } from '@components/dashboard/skeletons/EnvironmentWidgetSkeleton';
@@ -32,6 +32,8 @@ function LocationPage() {
     startDate: new Date(new Date().setHours(new Date().getHours() - 4)),
     endDate: new Date()
   });
+  const [locationDevices, setLocationDevices] = useState<Sensor[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<Sensor | null>(null);
 
 
   const fetchSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
@@ -98,17 +100,26 @@ function LocationPage() {
   
 
   const fetchPlantSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
-    const valuesResponse = await sensorsService.getSensorValues(
-      sensorSN, 
-      startDate, 
-      endDate
-    );
+    const valuesResponse = await sensorsService.getSensorValues(sensorSN, startDate, endDate);
     
     if (!valuesResponse.success || !valuesResponse.sensorvalue?.length) {
       throw new Error('No plant sensor data available');
     }
   
-    const readings = valuesResponse.sensorvalue.map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
+    const sortedReadings = valuesResponse.sensorvalue.sort((a: { CreateDateTime: string | number | Date; }, b: { CreateDateTime: string | number | Date; }) => 
+      new Date(b.CreateDateTime).getTime() - new Date(a.CreateDateTime).getTime()
+    );
+  
+    const validReadings = sortedReadings.filter((reading: { SENSORDATAJSON: string; }) => {
+      const parsed = JSON.parse(reading.SENSORDATAJSON);
+      return parsed.SensorType !== 255;
+    });
+  
+    if (!validReadings.length) {
+      throw new Error('No valid plant sensor data available');
+    }
+  
+    const readings = validReadings.map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
       const parsed = JSON.parse(reading.SENSORDATAJSON);
       return {
         time: format(new Date(reading.CreateDateTime), 
@@ -125,12 +136,8 @@ function LocationPage() {
       };
     });
   
-    readings.sort((a: { CreateDateTime: string | number | Date; }, b: { CreateDateTime: string | number | Date; }) => 
-      new Date(b.CreateDateTime).getTime() - new Date(a.CreateDateTime).getTime()
-    )
-  
     return {
-      sensorData: JSON.parse(valuesResponse.sensorvalue[0].SENSORDATAJSON),
+      sensorData: JSON.parse(validReadings[0].SENSORDATAJSON),
       chartData: {
         months: readings.map((r: { time: PlantReadingData; }) => r.time),
         soilTempData: readings.map((r: { soilTemp: PlantReadingData; }) => Number(r.soilTemp) || 0),
@@ -142,7 +149,7 @@ function LocationPage() {
         leafWetnessData: readings.map((r: { leafWetness: PlantReadingData; }) => Number(r.leafWetness) || 0),
         leafTempData: readings.map((r: { leafTemp: PlantReadingData; }) => Number(r.leafTemp) || 0)
       },
-      historicalData: valuesResponse.sensorvalue
+      historicalData: validReadings
     };
   };
 
@@ -156,39 +163,89 @@ function LocationPage() {
           setError('Failed to fetch sensors');
           return;
         }
-
-        const locationSensor = sensorsResponse.sensor?.find(
-          (          sensor: { location_id: string | string[] | undefined; }) => sensor.location_id === locationId
+  
+        const locationSensors = sensorsResponse.sensor?.filter(
+          (sensor: { location_id: string; }) => sensor.location_id === locationId
         );
-
-        if (!locationSensor) {
+  
+        if (!locationSensors?.length) {
           setError('No sensor found for this location');
           return;
         }
-
-        const sensorData = await fetchSensorData(
-          locationSensor.sn,
-          currentDateRange.startDate,
-          currentDateRange.endDate
-        );
-
+  
+        setLocationDevices(locationSensors);
+  
+        let sensorData = null;
+        let workingSensor = null;
+        
+        for (const sensor of locationSensors) {
+          try {
+            sensorData = await fetchSensorData(
+              sensor.sn,
+              currentDateRange.startDate,
+              currentDateRange.endDate
+            );
+            workingSensor = sensor;
+            break;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (err) {
+            continue;
+          }
+        }
+  
+        if (!sensorData || !workingSensor) {
+          setError('No data available from any sensor in this location');
+          return;
+        }
+  
+        setSelectedDevice(workingSensor);
         setMainSensor({
-          sensor: locationSensor,
+          sensor: workingSensor,
           ...sensorData
         });
+  
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to fetch sensor data');
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     if (locationId) {
       fetchData();
       const interval = setInterval(fetchData, 600000);
       return () => clearInterval(interval);
     }
   }, [locationId, currentDateRange]);
+
+  useEffect(() => {
+    const fetchSelectedSensorData = async () => {
+      if (!selectedDevice) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const sensorData = await fetchSensorData(
+          selectedDevice.sn,
+          currentDateRange.startDate,
+          currentDateRange.endDate
+        );
+        
+        setMainSensor({
+          sensor: selectedDevice,
+          ...sensorData
+        });
+      } catch (error) {
+        setMainSensor(null);
+        setError(error instanceof Error ? error.message : 'Failed to fetch sensor data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    fetchSelectedSensorData();
+  }, [selectedDevice]);
 
   useEffect(() => {
     const handlePlantSelected = async (e: Event) => {
@@ -284,6 +341,24 @@ function LocationPage() {
   if (error || !mainSensor) {
     return (
       <div className="flex flex-col gap-6">
+              {locationDevices.length > 1 && (
+        <div className="flex justify-end px-4">
+          <select
+            value={selectedDevice?.sn || ''}
+            onChange={(e) => {
+              const device = locationDevices.find(d => d.sn === e.target.value);
+              setSelectedDevice(device || null);
+            }}
+            className="bg-[rgba(24,24,27,0.5)] text-white border border-zinc-700 rounded-lg px-4 py-2"
+          >
+            {locationDevices.map((device, index) => (
+              <option key={device.sn} value={device.sn}>
+                LC Lite Device {index + 1} (SN: {device.sn})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
         <div className="flex flex-col lg:flex-row gap-3">
           <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex flex-col items-center justify-center min-h-[400px]">
             <div className="text-zinc-400 mb-4">
@@ -306,6 +381,24 @@ function LocationPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {locationDevices.length > 1 && (
+        <div className="flex justify-end px-4">
+          <select
+            value={selectedDevice?.sn || ''}
+            onChange={(e) => {
+              const device = locationDevices.find(d => d.sn === e.target.value);
+              setSelectedDevice(device || null);
+            }}
+            className="bg-[rgba(24,24,27,0.5)] text-white border border-zinc-700 rounded-lg px-4 py-2"
+          >
+            {locationDevices.map((device, index) => (
+              <option key={device.sn} value={device.sn}>
+                LC Lite Device {index + 1} (SN: {device.sn})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex flex-col lg:flex-row gap-3">
         <EnvironmentWidget 
           sensorData={mainSensor.sensorData}
