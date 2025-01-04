@@ -100,18 +100,20 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isLoading) return;
-    setError("");
+    setError('');
     setIsLoading(true);
-
+  
     try {
       const response = await authService.login({
         username: formData.username,
         password: formData.password,
       });
-
+  
       if (response.success && response.token) {
-        localStorage.setItem("token", response.token);
-
+        localStorage.setItem('token', response.token);
+        
+        const cookieOptions = 'path=/; secure; samesite=strict';
+        document.cookie = `token=${response.token}; ${cookieOptions}`;
         const urlParams = new URLSearchParams(window.location.search);
         const isSetup = urlParams.get("setup") === "true";
         const isMobile = window.innerWidth <= 768;
@@ -126,11 +128,11 @@ export default function LoginForm() {
           router.push("/dashboard");
         }
       } else {
-        setError(response.message || "Login failed");
+        setError(response.message || 'Login failed');
       }
     } catch (error) {
-      console.error("Login error:", error);
-      setError("An error occurred. Please try again.");
+      console.error('Login error:', error);
+      setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
