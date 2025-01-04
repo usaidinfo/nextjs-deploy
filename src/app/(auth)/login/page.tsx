@@ -33,6 +33,7 @@ export default function LoginPage() {
           height={96}
           className="absolute top-0 right-4 object-contain rounded-xl mt-4 opacity-50"
           priority
+          unoptimized
         />
         
         
