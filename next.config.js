@@ -8,3 +8,12 @@ module.exports = {
     return config;
   }
 }
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    domains: ['mygrow-beta.leafai.io']
+  }
+}
+
+module.exports = nextConfig
