@@ -62,7 +62,7 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
     bulkEC: 'rgba(107,47,209,1)',
     vwcRock: 'rgba(21,128,61,1)',
     vwc: 'rgba(21,128,61,1)',
-    vwc2: '107,47,209,1',
+    vwc2: 'rgba(107,47,209,1)',
     vwcCoco: 'rgba(21,128,61,1)',
     poreEC: 'rgba(107,47,209,1)',
     leafWetness: 'rgba(107,47,209,1)',
@@ -131,7 +131,7 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
     }
 
     if (sensorType === 16) {
-      return [{ key: 'vwc', color: chartColors.vwc2 }];
+      return [{ key: 'vwcSensor', color: chartColors.vwc2 }];
     }
 
     return [];
@@ -147,7 +147,8 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
       vwcCoco: data.vwcCocoData[index],
       soilTemp: data.soilTempData[index],
       leafWetness: data.leafWetnessData?.[index],
-      leafTemp: data.leafTempData?.[index]
+      leafTemp: data.leafTempData?.[index],
+      vwcSensor: data.vwcData[index]
     }));
   };
 
