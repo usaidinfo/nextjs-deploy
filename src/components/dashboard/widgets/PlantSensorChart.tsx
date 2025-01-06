@@ -100,13 +100,13 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   const getChartLines = () => {
     if (sensorType === 8) {
       switch(soilType?.toLowerCase()) {
-        case 'organic':
+        case 'soil':
           return [
             { key: 'poreEC', color: chartColors.poreEC },
             { key: 'vwc', color: chartColors.vwc },
             { key: 'soilTemp', color: chartColors.soilTemp }
           ];
-        case 'coco':
+        case 'coconut':
           return [
             { key: 'bulkEC', color: chartColors.bulkEC },
             { key: 'vwcCoco', color: chartColors.vwcCoco },

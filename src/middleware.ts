@@ -2,18 +2,23 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const publicPaths = ['/login', '/signup', '/setup', 'leafai-logo3.png'];
+const publicPaths = ['/login', '/signup', '/setup'];
+const publicFiles = ['/leafai-logo3.png', '/login-image.png', '/favicon.ico']; // Add any other public files
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  if (publicPaths.some(path => pathname.startsWith(path)) || 
-      pathname.startsWith('/_next') ||
-      pathname.startsWith('/static') ||
-      pathname.startsWith('/api')) {
+
+  // Allow static files and images
+  if (publicFiles.includes(pathname)) {
     return NextResponse.next();
   }
 
+  // Allow public paths
+  if (publicPaths.some(path => pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
+  // Check for token
   const token = request.cookies.get('token')?.value;
 
   if (!token) {
@@ -29,6 +34,12 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    /*
+     * Match all paths except:
+     * - api routes
+     * - _next (Next.js internals)
+     * - static files (images, etc)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)',
   ],
-}
+};

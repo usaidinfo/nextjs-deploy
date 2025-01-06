@@ -53,7 +53,7 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
     
     if (sensorType === 8) {
       switch(soilType?.toLowerCase()) {
-        case 'organic':
+        case 'soil':
           return [
             {
               label: 'Pore EC',
@@ -74,7 +74,7 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
               key: 'SoilTemp'
             }
           ];
-        case 'coco':
+        case 'coconut':
           return [
             {
               label: 'Bulk EC',
