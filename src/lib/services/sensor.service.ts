@@ -10,10 +10,17 @@ export default interface DeviceInfo {
 class SensorsService {
   private baseUrl = '/api/sensor';
 
+  private handleTokenError() {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  }
+
+
   async getSensors() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
+        this.handleTokenError();
         return { success: false, message: 'No authentication token found' };
       }
 
@@ -25,11 +32,22 @@ class SensorsService {
         }
       });
 
+      if (response.status === 401) {
+        this.handleTokenError();
+        return { success: false, message: 'Invalid token' };
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+
+      if (data.error === 'Invalid token') {
+        this.handleTokenError();
+        return { success: false, message: 'Invalid token' };
+      }
+
       return data;
     } catch (error) {
       return { 
