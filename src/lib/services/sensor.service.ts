@@ -12,6 +12,7 @@ class SensorsService {
 
   private handleTokenError() {
     localStorage.removeItem('token');
+    alert("Your Token Has Been Expired!")
     window.location.href = '/login';
   }
 

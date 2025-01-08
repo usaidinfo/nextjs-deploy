@@ -1,3 +1,4 @@
+// src/app/api/sensor/get-sensors
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -21,7 +22,6 @@ export async function POST(request: Request) {
 
     const data = await response.json();
     
-    // Pass through the exact error format from the API
     if (data.error && data.error === 'Invalid token') {
       return NextResponse.json(data, { status: 401 });
     }
