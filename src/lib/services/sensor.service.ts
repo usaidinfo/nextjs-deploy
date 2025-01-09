@@ -12,7 +12,7 @@ class SensorsService {
 
   private handleTokenError() {
     localStorage.removeItem('token');
-    alert("Your Token Has Been Expired!")
+    alert("Time to water your session! Please sign in again to resume monitoring your garden.🍃")
     window.location.href = '/login';
   }
 
