@@ -3,12 +3,13 @@
 export type SensorType = 
   | 'VWC Soil Moisture Sensor'
   | 'Precise Soil Moisture Sensor'
-  | 'Leaf Wetness Sensor';
+  | 'Leaf Wetness Sensor'
 
 export const SENSOR_PRODUCT_TYPES: Record<string, SensorType> = {
   '16': 'VWC Soil Moisture Sensor',
   '8': 'Precise Soil Moisture Sensor',
-  '15': 'Leaf Wetness Sensor'
+  '15': 'Leaf Wetness Sensor',
+  '17' : 'VWC Soil Moisture Sensor'
 };
 
 export const SENSOR_MEASUREMENTS: Record<SensorType, string[]> = {

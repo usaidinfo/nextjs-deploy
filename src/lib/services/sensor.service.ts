@@ -16,7 +16,6 @@ class SensorsService {
     window.location.href = '/login';
   }
 
-
   async getSensors() {
     try {
       const token = localStorage.getItem('token');

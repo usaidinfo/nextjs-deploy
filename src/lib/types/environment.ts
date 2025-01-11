@@ -16,4 +16,6 @@ export interface PlantReadingData {
     poreEC: number;
     leafWetness: number;
     leafTemp: number;
+    vwcChannel0: number;
+    vwcChannel1: number;
   }

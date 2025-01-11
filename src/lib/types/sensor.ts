@@ -17,6 +17,8 @@ export interface SensorData {
   VWC?: string;
   VWCCoco?: string;
   PoreEC?: string;
+  VWC_CHANNEL_0?: number;
+  VWC_CHANNEL_1?: number;
 }
 
 export interface SensorValue {
@@ -38,6 +40,9 @@ export interface Sensor {
   plant_name: string | null;
   plant_soiltype: string | null;
   sn_addonsensor: string | null;
+  sn_addonsensor_info?: {
+    SENSOR_VALUE_FIELD: string;
+  };
 }
 
 export interface PlantSensorWithData {

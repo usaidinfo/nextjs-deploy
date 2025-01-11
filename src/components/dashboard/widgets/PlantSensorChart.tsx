@@ -22,6 +22,8 @@ export interface PlantChartData {
   poreECData: number[];
   leafWetnessData?: number[];
   leafTempData?: number[];
+  vwcChannel1Data: number[];
+  vwcChannel0Data: number[];
 }
 
 interface PlantSensorChartProps {
@@ -131,7 +133,18 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
     }
 
     if (sensorType === 16) {
-      return [{ key: 'vwcSensor', color: chartColors.vwc2 }];
+        return [{ key: 'vwcSensor', color: chartColors.vwc2 }];
+    }
+
+    if (sensorType === 17) {
+      if (data.vwcChannel0Data?.length && data.vwcChannel1Data?.length) {
+        return [
+          { key: 'vwcChannel0', color: chartColors.vwc2, label: 'VWC 1' },
+          { key: 'vwcChannel1', color: chartColors.vwcCoco, label: 'VWC 2' }
+        ];
+      } else {
+        return [{ key: 'vwc', color: chartColors.vwc2 }];
+      }
     }
 
     return [];
@@ -144,6 +157,8 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
       bulkEC: data.bulkECData[index],
       vwcRock: data.vwcRockData[index],
       vwc: data.vwcData[index],
+      vwcChannel0: data.vwcChannel0Data?.[index],
+      vwcChannel1: data.vwcChannel1Data?.[index],
       vwcCoco: data.vwcCocoData[index],
       soilTemp: data.soilTempData[index],
       leafWetness: data.leafWetnessData?.[index],

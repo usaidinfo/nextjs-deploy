@@ -97,7 +97,23 @@ export default function LocationDashboardPage() {
     const valuesResponse = await sensorsService.getSensorValues(sensorSN, startDate, endDate);
     
     if (!valuesResponse.success || !valuesResponse.sensorvalue?.length) {
-      throw new Error('No plant sensor data available');
+      return {
+        sensorData: null,
+        chartData: {
+          months: [],
+          soilTempData: [],
+          bulkECData: [],
+          vwcRockData: [],
+          vwcData: [],
+          vwcCocoData: [],
+          poreECData: [],
+          leafWetnessData: [],
+          leafTempData: [],
+          vwcChannel0Data: [],
+          vwcChannel1Data: []
+        },
+        historicalData: []
+      };
     }
   
     const sortedReadings = valuesResponse.sensorvalue.sort((a: { CreateDateTime: string | number | Date; }, b: { CreateDateTime: string | number | Date; }) => 
@@ -126,7 +142,9 @@ export default function LocationDashboardPage() {
         vwcCoco: parsed.VWCCoco ?? 0,
         poreEC: parsed.PoreEC ?? 0,
         leafWetness: parsed.LeafWetness ?? 0,
-        leafTemp: parsed.LeafTemp ?? 0
+        leafTemp: parsed.LeafTemp ?? 0,
+        vwcChannel0Data: parsed.VWC_CHANNEL_0 ?? 0, 
+        vwcChannel1Data: parsed.VWC_CHANNEL_1 ?? 0
       };
     });
   
@@ -141,7 +159,9 @@ export default function LocationDashboardPage() {
         vwcCocoData: readings.map((r: { vwcCoco: PlantReadingData; }) => Number(r.vwcCoco) || 0),
         poreECData: readings.map((r: { poreEC: PlantReadingData; }) => Number(r.poreEC) || 0),
         leafWetnessData: readings.map((r: { leafWetness: PlantReadingData; }) => Number(r.leafWetness) || 0),
-        leafTempData: readings.map((r: { leafTemp: PlantReadingData; }) => Number(r.leafTemp) || 0)
+        leafTempData: readings.map((r: { leafTemp: PlantReadingData; }) => Number(r.leafTemp) || 0),
+        vwcChannel0Data: readings.map((r: { vwcChannel0Data: PlantReadingData }) => Number(r.vwcChannel0Data) || 0),
+        vwcChannel1Data: readings.map((r: { vwcChannel1Data: PlantReadingData }) => Number(r.vwcChannel1Data) || 0)
       },
       historicalData: validReadings
     };
