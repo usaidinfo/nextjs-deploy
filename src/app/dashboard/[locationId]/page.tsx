@@ -150,7 +150,8 @@ function LocationPage() {
         vwcChannel0Data: parsed.VWC_CHANNEL_0 ?? 0, 
         vwcChannel1Data: parsed.VWC_CHANNEL_1 ?? 0
       };
-    });
+    }).sort((a: { time: string | number | Date; }, b: { time: string | number | Date; }) => new Date(a.time).getTime() - new Date(b.time).getTime());
+
   
     return {
       sensorData: JSON.parse(validReadings[0].SENSORDATAJSON),
@@ -164,8 +165,8 @@ function LocationPage() {
         poreECData: readings.map((r: { poreEC: PlantReadingData; }) => Number(r.poreEC) || 0),
         leafWetnessData: readings.map((r: { leafWetness: PlantReadingData; }) => Number(r.leafWetness) || 0),
         leafTempData: readings.map((r: { leafTemp: PlantReadingData; }) => Number(r.leafTemp) || 0),
-        vwcChannel0Data: readings.map((r: { vwcChannel0Data: PlantReadingData }) => Number(r.vwcChannel0Data) || 0),
-        vwcChannel1Data: readings.map((r: { vwcChannel1Data: PlantReadingData }) => Number(r.vwcChannel1Data) || 0)
+        vwcChannel0Data: readings.map((r: { VWC_CHANNEL_0: PlantReadingData; }) => r.VWC_CHANNEL_0),
+        vwcChannel1Data: readings.map((r: { VWC_CHANNEL_1: PlantReadingData; }) => r.VWC_CHANNEL_1)
       },
       historicalData: validReadings
     };
@@ -217,43 +218,76 @@ function LocationPage() {
   }, [locationId, currentDateRange]);
 
 
+
   useEffect(() => {
     const handlePlantSelected = async (e: Event) => {
       const event = e as CustomEvent<PlantSelectedEvent>;
       const plantId = event.detail.plantId;
+      const plantName = event.detail.plantName;
       
       try {
         const sensorsResponse = await sensorsService.getSensors();
-        const plantSensor = sensorsResponse.sensor?.find(
-          (          sensor: { in_plant_id: string; }) => sensor.in_plant_id === plantId
+        
+        const plantSensors = sensorsResponse.sensor.filter(
+          (          sensor: { in_plant_id: string; plant_name: string; }) => sensor.in_plant_id === plantId && sensor.plant_name === plantName
         );
-
-
-        if (!plantSensor) {
+  
+        if (!plantSensors.length) {
           setSelectedPlantSensor(null);
           return;
         }
-
+  
+        const baseSensor = plantSensors[0];
+  
         const sensorData = await fetchPlantSensorData(
-          plantSensor.sn,
+          baseSensor.sn,
           currentDateRange.startDate,
           currentDateRange.endDate
         );
-
-        setSelectedPlantSensor({
-          sensor: plantSensor,
-          ...sensorData,
-          plantSoilType: plantSensor.plant_soiltype
+  
+        // Modify sensorData to include both channels if they exist
+        const modifiedSensorData = {
+          ...sensorData.sensorData,
+          VWC_CHANNEL_0: undefined,
+          VWC_CHANNEL_1: undefined
+        };
+  
+        // Modify chartData to only include relevant channels
+        const modifiedChartData = {
+          ...sensorData.chartData,
+          vwcChannel0Data: [],
+          vwcChannel1Data: []
+        };
+  
+        plantSensors.forEach((sensor: { sn_addonsensor_info: { SENSOR_VALUE_FIELD: string; }; }) => {
+          const channelField = sensor.sn_addonsensor_info?.SENSOR_VALUE_FIELD;
+          if (channelField === 'VWC_CHANNEL_0') {
+            modifiedSensorData.VWC_CHANNEL_0 = sensorData.sensorData?.VWC_CHANNEL_0;
+            modifiedChartData.vwcChannel0Data = sensorData.chartData.vwcChannel0Data;
+          } else if (channelField === 'VWC_CHANNEL_1') {
+            modifiedSensorData.VWC_CHANNEL_1 = sensorData.sensorData?.VWC_CHANNEL_1;
+            modifiedChartData.vwcChannel1Data = sensorData.chartData.vwcChannel1Data;
+          }
         });
+  
+        setSelectedPlantSensor({
+          sensor: baseSensor,
+          sensorData: modifiedSensorData,
+          chartData: modifiedChartData,
+          historicalData: sensorData.historicalData,
+          plantSoilType: baseSensor.plant_soiltype
+        });
+  
       } catch (error) {
         console.error('Error fetching plant sensor:', error);
         setSelectedPlantSensor(null);
       }
     };
-
+  
     window.addEventListener('plantSelected', handlePlantSelected);
     return () => window.removeEventListener('plantSelected', handlePlantSelected);
   }, [currentDateRange]);
+  
 
   const handleDateRangeChange = async (startDate: Date, endDate: Date) => {
     if (!mainSensor) return;

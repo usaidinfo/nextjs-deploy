@@ -59,6 +59,7 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   soilType = '',
   isLoading = false,
 }) => {
+  
   const chartColors = {
     soilTemp: 'rgba(214,57,57,1)',
     bulkEC: 'rgba(107,47,209,1)',
@@ -137,13 +138,18 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
     }
 
     if (sensorType === 17) {
-      if (data.vwcChannel0Data?.length && data.vwcChannel1Data?.length) {
-        return [
-          { key: 'vwcChannel0', color: chartColors.vwc2, label: 'VWC 1' },
-          { key: 'vwcChannel1', color: chartColors.vwcCoco, label: 'VWC 2' }
-        ];
-      } else {
-        return [{ key: 'vwc', color: chartColors.vwc2 }];
+      const hasChannel0 = data.vwcChannel0Data?.some(val => val !== undefined && val !== null);
+      const hasChannel1 = data.vwcChannel1Data?.some(val => val !== undefined && val !== null);
+      
+      if (hasChannel0 || hasChannel1) {
+        const lines = [];
+        if (hasChannel0) {
+          lines.push({ key: 'vwcChannel0Data', color: chartColors.vwc, label: 'VWC 1' });
+        }
+        if (hasChannel1) {
+          lines.push({ key: 'vwcChannel1Data', color: chartColors.vwc2, label: 'VWC 2' });
+        }
+        return lines;
       }
     }
 
@@ -157,8 +163,8 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
       bulkEC: data.bulkECData[index],
       vwcRock: data.vwcRockData[index],
       vwc: data.vwcData[index],
-      vwcChannel0: data.vwcChannel0Data?.[index],
-      vwcChannel1: data.vwcChannel1Data?.[index],
+      vwcChannel0Data: data.vwcChannel0Data?.[index],
+      vwcChannel1Data: data.vwcChannel1Data?.[index],
       vwcCoco: data.vwcCocoData[index],
       soilTemp: data.soilTempData[index],
       leafWetness: data.leafWetnessData?.[index],

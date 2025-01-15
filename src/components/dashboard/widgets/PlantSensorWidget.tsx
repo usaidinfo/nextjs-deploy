@@ -150,31 +150,29 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
     }
 
     if (sensorType === 17) {
-      if (sensorData.VWC_CHANNEL_0 !== undefined && sensorData.VWC_CHANNEL_1 !== undefined) {
-        return [
-          {
-            label: 'VWC 1',
-            value: sensorData.VWC_CHANNEL_0 || '0',
-            unit: '%',
-            key: 'VWC_CHANNEL_0'
-          },
-          {
-            label: 'VWC 2',
-            value: sensorData.VWC_CHANNEL_1 || '0',
-            unit: '%',
-            key: 'VWC_CHANNEL_1'
-          }
-        ];
-      } else {
-        return [
-          {
-            label: 'VWC',
-            value: sensorData.VWC || '0',
-            unit: '%',
-            key: 'VWC'
-          }
-        ];
+      const metrics = [];
+      
+      // Check for Channel 0
+      if (sensorData.VWC_CHANNEL_0 !== undefined) {
+        metrics.push({
+          label: 'VWC 1',
+          value: sensorData.VWC_CHANNEL_0,
+          unit: '%',
+          key: 'VWC_CHANNEL_0'
+        });
       }
+      
+      // Check for Channel 1
+      if (sensorData.VWC_CHANNEL_1 !== undefined) {
+        metrics.push({
+          label: 'VWC 2',
+          value: sensorData.VWC_CHANNEL_1,
+          unit: '%',
+          key: 'VWC_CHANNEL_1'
+        });
+      }
+      
+      return metrics;
     }
 
     return [];
