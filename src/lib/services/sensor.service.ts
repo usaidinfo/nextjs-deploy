@@ -90,7 +90,7 @@ class SensorsService {
     }
   }
 
-  async addSensorToPlant(data: { sn: string; plant_id: number }) {
+  async addSensorToPlant(data: { sn: string; plant_id: number; addonsn: string }) {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/sensor/add-sensor-plant', {

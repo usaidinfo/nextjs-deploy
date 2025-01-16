@@ -75,11 +75,14 @@ export default function PlantSelectPage() {
       return;
     }
   
+    const latestSensor = sensors[sensors.length - 1];
+
     setIsSubmitting(true);
     try {
       const response = await sensorsService.addSensorToPlant({
         sn: deviceSN || '',
-        plant_id: Number(selectedPlant.plant_id)
+        plant_id: Number(selectedPlant.plant_id),
+        addonsn: latestSensor?.sn || ''
       });
   
       if (!response.success) {
@@ -87,7 +90,6 @@ export default function PlantSelectPage() {
         return;
       }
   
-      const latestSensor = sensors[sensors.length - 1];
       updateLatestSensor({
         ...latestSensor,
         plantName: selectedPlant.plant_name
