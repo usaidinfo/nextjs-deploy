@@ -59,6 +59,8 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   soilType = '',
   isLoading = false,
 }) => {
+
+  console.log("chart data: ", data)
   
   const chartColors = {
     soilTemp: 'rgba(214,57,57,1)',

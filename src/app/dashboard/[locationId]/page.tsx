@@ -221,36 +221,78 @@ function LocationPage() {
     const handlePlantSelected = async (e: Event) => {
       const event = e as CustomEvent<PlantSelectedEvent>;
       const plantId = event.detail.plantId;
+      const plantName = event.detail.plantName;
       
       try {
         const sensorsResponse = await sensorsService.getSensors();
-        const plantSensor = sensorsResponse.sensor?.find(
-          (          sensor: { in_plant_id: string; }) => sensor.in_plant_id === plantId
+        
+        // Find the base sensor that's connected to this plant
+        const plantSensor = sensorsResponse.sensor.find(
+          (          sensor: { in_plant_id: string; plant_name: string; }) => sensor.in_plant_id === plantId && sensor.plant_name === plantName
         );
-
-
+  
         if (!plantSensor) {
           setSelectedPlantSensor(null);
           return;
         }
-
+  
+        // Get the base sensor sn
+        const baseSensorSN = plantSensor.sn;
+  
+        // Find all entries for this base sensor to know which channels are used
+        const allSensorEntries = sensorsResponse.sensor.filter(
+          (          sensor: { sn: string; }) => sensor.sn === baseSensorSN
+        );
+  
         const sensorData = await fetchPlantSensorData(
-          plantSensor.sn,
+          baseSensorSN,
           currentDateRange.startDate,
           currentDateRange.endDate
         );
-
+  
+        // Start with all channels null
+        const modifiedSensorData = {
+          ...sensorData.sensorData,
+          VWC_CHANNEL_0: null,
+          VWC_CHANNEL_1: null
+        };
+  
+        const modifiedChartData = {
+          ...sensorData.chartData,
+          vwcChannel0Data: [],
+          vwcChannel1Data: []
+        };
+  
+        allSensorEntries.forEach((entry: { in_plant_id: string; sn_addonsensor_info: string; }) => {
+          if (entry.in_plant_id === plantId) {
+            const sensorInfo = entry.sn_addonsensor_info ? JSON.parse(entry.sn_addonsensor_info) : null;
+            const channelField = sensorInfo?.SENSOR_VALUE_FIELD;
+  
+            if (channelField === 'VWC_CHANNEL_0') {
+              modifiedSensorData.VWC_CHANNEL_0 = sensorData.sensorData?.VWC_CHANNEL_0;
+              modifiedChartData.vwcChannel0Data = sensorData.chartData.vwcChannel0Data;
+            }
+            if (channelField === 'VWC_CHANNEL_1') {
+              modifiedSensorData.VWC_CHANNEL_1 = sensorData.sensorData?.VWC_CHANNEL_1;
+              modifiedChartData.vwcChannel1Data = sensorData.chartData.vwcChannel1Data;
+            }
+          }
+        });
+  
         setSelectedPlantSensor({
           sensor: plantSensor,
-          ...sensorData,
+          sensorData: modifiedSensorData,
+          chartData: modifiedChartData,
+          historicalData: sensorData.historicalData,
           plantSoilType: plantSensor.plant_soiltype
         });
+  
       } catch (error) {
         console.error('Error fetching plant sensor:', error);
         setSelectedPlantSensor(null);
       }
     };
-
+  
     window.addEventListener('plantSelected', handlePlantSelected);
     return () => window.removeEventListener('plantSelected', handlePlantSelected);
   }, [currentDateRange]);

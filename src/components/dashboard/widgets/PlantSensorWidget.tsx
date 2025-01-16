@@ -153,7 +153,7 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
       const metrics = [];
       
       // Check for Channel 0
-      if (sensorData.VWC_CHANNEL_0 !== undefined) {
+      if (sensorData.VWC_CHANNEL_0 !== null) {
         metrics.push({
           label: 'VWC 1',
           value: sensorData.VWC_CHANNEL_0,
@@ -163,7 +163,7 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
       }
       
       // Check for Channel 1
-      if (sensorData.VWC_CHANNEL_1 !== undefined) {
+      if (sensorData.VWC_CHANNEL_1 !== null) {
         metrics.push({
           label: 'VWC 2',
           value: sensorData.VWC_CHANNEL_1,

@@ -146,7 +146,7 @@ export default function LocationDashboardPage() {
         vwcChannel0Data: parsed.VWC_CHANNEL_0 ?? 0, 
         vwcChannel1Data: parsed.VWC_CHANNEL_1 ?? 0
       };
-    }).sort((a: { time: string | number | Date; }, b: { time: string | number | Date; }) => new Date(a.time).getTime() - new Date(b.time).getTime());
+    });
   
     return {
       sensorData: JSON.parse(validReadings[0].SENSORDATAJSON),
@@ -160,8 +160,8 @@ export default function LocationDashboardPage() {
         poreECData: readings.map((r: { poreEC: PlantReadingData; }) => Number(r.poreEC) || 0),
         leafWetnessData: readings.map((r: { leafWetness: PlantReadingData; }) => Number(r.leafWetness) || 0),
         leafTempData: readings.map((r: { leafTemp: PlantReadingData; }) => Number(r.leafTemp) || 0),
-        vwcChannel0Data: readings.map((r: { VWC_CHANNEL_0: PlantReadingData; }) => r.VWC_CHANNEL_0),
-        vwcChannel1Data: readings.map((r: { VWC_CHANNEL_1: PlantReadingData; }) => r.VWC_CHANNEL_1)
+        vwcChannel0Data: readings.map((r: { vwcChannel0Data: PlantReadingData }) => Number(r.vwcChannel0Data) || 0),
+        vwcChannel1Data: readings.map((r: { vwcChannel1Data: PlantReadingData }) => Number(r.vwcChannel1Data) || 0)
       },
       historicalData: validReadings
     };
@@ -221,55 +221,66 @@ export default function LocationDashboardPage() {
       
       try {
         const sensorsResponse = await sensorsService.getSensors();
-
-        const plantSensors = sensorsResponse.sensor.filter(
+        
+        // Find the base sensor that's connected to this plant
+        const plantSensor = sensorsResponse.sensor.find(
           (          sensor: { in_plant_id: string; plant_name: string; }) => sensor.in_plant_id === plantId && sensor.plant_name === plantName
         );
   
-        if (!plantSensors.length) {
+        if (!plantSensor) {
           setSelectedPlantSensor(null);
           return;
         }
-
-        const baseSensor = plantSensors[0];
+  
+        // Get the base sensor sn
+        const baseSensorSN = plantSensor.sn;
+  
+        // Find all entries for this base sensor to know which channels are used
+        const allSensorEntries = sensorsResponse.sensor.filter(
+          (          sensor: { sn: string; }) => sensor.sn === baseSensorSN
+        );
   
         const sensorData = await fetchPlantSensorData(
-          baseSensor.sn,
+          baseSensorSN,
           currentDateRange.startDate,
           currentDateRange.endDate
         );
   
-        // Modify sensorData to include both channels if they exist
+        // Start with all channels null
         const modifiedSensorData = {
           ...sensorData.sensorData,
-          VWC_CHANNEL_0: undefined,
-          VWC_CHANNEL_1: undefined
+          VWC_CHANNEL_0: null,
+          VWC_CHANNEL_1: null
         };
   
-        // Modify chartData to only include relevant channels
         const modifiedChartData = {
           ...sensorData.chartData,
           vwcChannel0Data: [],
           vwcChannel1Data: []
         };
   
-        plantSensors.forEach((sensor: { sn_addonsensor_info: { SENSOR_VALUE_FIELD: string; }; }) => {
-          const channelField = sensor.sn_addonsensor_info?.SENSOR_VALUE_FIELD;
-          if (channelField === 'VWC_CHANNEL_0') {
-            modifiedSensorData.VWC_CHANNEL_0 = sensorData.sensorData?.VWC_CHANNEL_0;
-            modifiedChartData.vwcChannel0Data = sensorData.chartData.vwcChannel0Data;
-          } else if (channelField === 'VWC_CHANNEL_1') {
-            modifiedSensorData.VWC_CHANNEL_1 = sensorData.sensorData?.VWC_CHANNEL_1;
-            modifiedChartData.vwcChannel1Data = sensorData.chartData.vwcChannel1Data;
+        allSensorEntries.forEach((entry: { in_plant_id: string; sn_addonsensor_info: string; }) => {
+          if (entry.in_plant_id === plantId) {
+            const sensorInfo = entry.sn_addonsensor_info ? JSON.parse(entry.sn_addonsensor_info) : null;
+            const channelField = sensorInfo?.SENSOR_VALUE_FIELD;
+  
+            if (channelField === 'VWC_CHANNEL_0') {
+              modifiedSensorData.VWC_CHANNEL_0 = sensorData.sensorData?.VWC_CHANNEL_0;
+              modifiedChartData.vwcChannel0Data = sensorData.chartData.vwcChannel0Data;
+            }
+            if (channelField === 'VWC_CHANNEL_1') {
+              modifiedSensorData.VWC_CHANNEL_1 = sensorData.sensorData?.VWC_CHANNEL_1;
+              modifiedChartData.vwcChannel1Data = sensorData.chartData.vwcChannel1Data;
+            }
           }
         });
   
         setSelectedPlantSensor({
-          sensor: baseSensor,
+          sensor: plantSensor,
           sensorData: modifiedSensorData,
           chartData: modifiedChartData,
           historicalData: sensorData.historicalData,
-          plantSoilType: baseSensor.plant_soiltype
+          plantSoilType: plantSensor.plant_soiltype
         });
   
       } catch (error) {
