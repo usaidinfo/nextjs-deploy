@@ -192,13 +192,13 @@ export default function LoginForm() {
                 </div>
               </AnimatedInput>
             </div>
-            <button
-              type="button"
-              onClick={(e) => e.preventDefault()}
-              className="text-slate-400 text-xs pl-5 py-2"
-            >
-              I forgot my password
-            </button>
+            <Link href="/forget-password" className="inline-block">
+              <span
+                className="text-slate-400 text-xs pl-5 py-2"
+              >
+                I forgot my password
+              </span>
+            </Link>
           </div>
 
           {error && (

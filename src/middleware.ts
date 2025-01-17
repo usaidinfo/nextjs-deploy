@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const publicPaths = ['/login', '/signup', '/setup'];
+const publicPaths = ['/login', '/signup', '/setup','/forget-password'];
 const publicFiles = ['/leafai-logo3.png', '/login-image.png', '/favicon.ico']; // Add any other public files
 
 export function middleware(request: NextRequest) {

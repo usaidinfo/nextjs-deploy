@@ -19,3 +19,9 @@ export interface LoginRequest {
     success: boolean;
     message?: string;
   }
+
+  export interface PasswordResetRequest {
+    username: string;
+    email: string;
+  }
+  

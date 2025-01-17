@@ -1,5 +1,5 @@
 // src/lib/services/auth.service.ts
-import { LoginRequest, AuthResponse, SignUpRequest,  } from 'lib/types/auth';
+import { LoginRequest, AuthResponse, SignUpRequest, PasswordResetRequest } from 'lib/types/auth';
 // import {  SignUpResponse,  } from 'lib/types/auth';
 
 
@@ -42,6 +42,27 @@ class AuthService {
         return {
           success: false,
           message: 'Signup failed. Please try again.',
+        };
+      }
+    }
+
+    async resetPassword(data: PasswordResetRequest): Promise<AuthResponse> {
+      try {
+        const response = await fetch('/api/auth/password-reset', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+  
+        const responseData = await response.json();
+        return responseData;
+      } catch (error) {
+        console.error('Password reset error:', error);
+        return {
+          success: false,
+          message: 'Password reset failed. Please try again.',
         };
       }
     }
