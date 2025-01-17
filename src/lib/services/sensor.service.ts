@@ -252,6 +252,36 @@ class SensorsService {
       return { success: false, message: 'Failed to validate device' };
     }
   }
+
+  async deleteSensor(sn: string) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return { success: false, message: 'No authentication token found' };
+      }
+
+      const response = await fetch(`${this.baseUrl}/delete-sensor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Token': token,
+        },
+        body: JSON.stringify({ sn }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Delete sensor error:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Failed to delete sensor' 
+      };
+    }
+  }
 }
 
 export const sensorsService = new SensorsService();
