@@ -78,7 +78,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ anchorEl, onClose }) 
             className="text-white hover:bg-zinc-700 flex items-center gap-2"
           >
             {getIcon(option.iconType)}
-          <span>{option.label}</span>
+          <span className='text-white'>{option.label}</span>
           </MenuItem>
         ))}
       </Menu>
