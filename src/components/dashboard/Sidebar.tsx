@@ -18,6 +18,7 @@ import CreatePlantModal from './modals/CreatePlantModal';
 import { LocationSkeleton } from './skeletons/LocationSkeleton';
 import { PlantSkeleton } from './skeletons/PlantSkeleton';
 import Image from 'next/image';
+import { useDeviceStore } from 'lib/store/deviceStore';
 
 interface LocationData {
   plants: Plant[];
@@ -41,6 +42,7 @@ const Sidebar = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreatePlantModal, setShowCreatePlantModal] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const setActivePlant = useDeviceStore(state => state.setActivePlant)
 
   const fetchLocations = async () => {
     try {
@@ -139,6 +141,7 @@ const Sidebar = () => {
   };
 
   const handlePlantClick = (plant: Plant, locationId: string) => {
+    setActivePlant(plant.plant_id, plant.plant_name);
     const locationData = locationPlants[locationId];
     if (!locationData) return;
 

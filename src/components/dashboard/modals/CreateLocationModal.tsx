@@ -7,6 +7,7 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { locationService } from 'lib/services/location.service';
+import { StyledTextField } from '@components/common/form/StyledTextField';
 
 interface CreateLocationModalProps {
   isOpen: boolean;
@@ -54,13 +55,13 @@ const CreateLocationModal: React.FC<CreateLocationModalProps> = ({
       onClose={onClose}
       PaperProps={{
         style: {
-          backgroundColor: 'rgba(24,24,27,0.9)',
+          backgroundColor: 'rgba(24,24,27,0.95)',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '16px',
           width: '90vw',
           maxWidth: '400px'
         },
-        className: 'md:!min-w-[400px]' // Preserve desktop width
+        className: 'md:!min-w-[400px]'
       }}
     >
       <DialogTitle className="flex justify-between items-center text-white">
@@ -82,23 +83,16 @@ const CreateLocationModal: React.FC<CreateLocationModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <label 
-              htmlFor="locationName" 
-              className="block text-sm font-medium text-zinc-300 mb-2"
-            >
-              Location Name
-            </label>
-            <input
-              id="locationName"
-              type="text"
+          <div className="my-6">
+            <StyledTextField
+              fullWidth
+              label="Location Name"
+              variant="outlined"
               value={locationName}
               onChange={(e) => setLocationName(e.target.value)}
-              className="w-full px-4 py-2 md:py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg 
-                        text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500
-                        transition-colors text-base md:text-sm"
               placeholder="Enter location name"
-              required
+              error={!!error}
+              disabled={loading}
             />
           </div>
 

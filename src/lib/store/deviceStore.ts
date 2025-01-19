@@ -32,6 +32,12 @@ interface DeviceState {
   setScannedSensor: (sensor: ScannedSensor) => void;
   updateLatestSensor: (updatedSensor: Sensor) => void;
   reset: () => void;
+  activeSensor: string | null;
+  activePlantId: string | null;
+  activePlantName: string | null;
+  setActiveSensor: (sn: string) => void;
+  setActivePlant: (plantId: string, plantName: string) => void;
+  resetActiveItems: () => void;
 }
 
 export const useDeviceStore = create<DeviceState>((set) => ({
@@ -58,5 +64,18 @@ export const useDeviceStore = create<DeviceState>((set) => ({
     sensors: [], 
     selectedPlant: null,
     scannedSensor: null
+  }),
+  activeSensor: null,
+  activePlantId: null,
+  activePlantName: null,
+  setActiveSensor: (sn) => set({ activeSensor: sn }),
+  setActivePlant: (plantId, plantName) => set({ 
+    activePlantId: plantId, 
+    activePlantName: plantName 
+  }),
+  resetActiveItems: () => set({ 
+    activeSensor: null, 
+    activePlantId: null, 
+    activePlantName: null 
   })
 }));

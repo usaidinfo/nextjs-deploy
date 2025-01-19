@@ -7,6 +7,28 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { plantService } from 'lib/services/plant.service';
+import { StyledTextField } from '@components/common/form/StyledTextField';
+import { Select, MenuItem, FormControl, InputLabel, SelectChangeEvent } from '@mui/material';
+import { styled } from '@mui/material/styles';
+
+const StyledSelect = styled(Select)({
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  '&:hover .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+    borderColor: '#008500',
+  },
+  '& .MuiSelect-select': {
+    color: 'white',
+    padding: '14px 20px',
+  },
+  backgroundColor: 'rgba(24, 24, 27, 0.4)',
+  borderRadius: '12px',
+  color: 'white',
+});
 
 interface CreatePlantModalProps {
   isOpen: boolean;
@@ -60,17 +82,23 @@ const CreatePlantModal: React.FC<CreatePlantModalProps> = ({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSoilTypeChange = (event: SelectChangeEvent<any>) => {
+    setSoilType(event.target.value);
+  };
+
   return (
     <Dialog 
       open={isOpen} 
       onClose={onClose}
       PaperProps={{
         style: {
-          backgroundColor: 'rgba(24,24,27,0.9)',
+          backgroundColor: 'rgba(24,24,27,0.95)',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '16px',
           width: '90vw',
-          maxWidth: '400px'
+          maxWidth: '400px',
+          backdropFilter: 'blur(10px)'
         },
         className: 'md:!min-w-[400px]'
       }}
@@ -94,51 +122,46 @@ const CreatePlantModal: React.FC<CreatePlantModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4 mb-6">
-            <div>
-              <label 
-                htmlFor="plantName" 
-                className="block text-sm font-medium text-zinc-300 mb-2"
-              >
-                Plant Name
-              </label>
-              <input
-                id="plantName"
-                type="text"
-                value={plantName}
-                onChange={(e) => setPlantName(e.target.value)}
-                className="w-full px-4 py-2 md:py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg 
-                          text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500
-                          transition-colors text-base md:text-sm"
-                placeholder="Enter plant name"
-                required
-              />
-            </div>
+        <div className="space-y-6 mb-6">
+            <p className="text-zinc-400 text-sm">Enter details for your new plant</p>
+            
+            <StyledTextField
+              fullWidth
+              label="Plant Name"
+              variant="outlined"
+              value={plantName}
+              onChange={(e) => setPlantName(e.target.value)}
+              placeholder="Enter plant name"
+              error={!!error}
+              disabled={loading}
+            />
 
-            <div>
-              <label 
-                htmlFor="soilType" 
-                className="block text-sm font-medium text-zinc-300 mb-2"
+            <FormControl fullWidth>
+              <InputLabel 
+                id="soil-type-label" 
+                sx={{ 
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-focused': { color: '#009600' }
+                }}
               >
                 Soil Type
-              </label>
-              <select
-                id="soilType"
+              </InputLabel>
+              <StyledSelect
+                labelId="soil-type-label"
                 value={soilType}
-                onChange={(e) => setSoilType(e.target.value)}
-                className="w-full px-4 py-2 md:py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg 
-                          text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500
-                          transition-colors text-base md:text-sm"
-                required
-              >
-                <option value="">Select soil type</option>
+                label="Soil Type"
+                onChange={handleSoilTypeChange}
+                >
+                <MenuItem value="">
+                  <em>Select soil type</em>
+                </MenuItem>
                 {SOIL_TYPES.map(type => (
-                  <option key={type.value} value={type.value}>
+                  <MenuItem key={type.value} value={type.value}>
                     {type.label}
-                  </option>
+                  </MenuItem>
                 ))}
-              </select>
-            </div>
+              </StyledSelect>
+            </FormControl>
           </div>
 
           <div className="flex justify-end gap-3">

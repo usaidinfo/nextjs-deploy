@@ -12,6 +12,7 @@ import { ChartWidgetSkeleton } from '@components/dashboard/skeletons/ChartWidget
 import { format } from 'date-fns';
 import PlantSensorWidget from '@components/dashboard/widgets/PlantSensorWidget';
 import PlantSensorChart from '@components/dashboard/widgets/PlantSensorChart';
+import { useDeviceStore } from 'lib/store/deviceStore';
 
 interface PlantSelectedEvent {
   plantId: string;
@@ -32,6 +33,9 @@ function LocationPage() {
     startDate: new Date(new Date().setHours(new Date().getHours() - 4)),
     endDate: new Date()
   });
+  const setActiveSensor = useDeviceStore(state => state.setActiveSensor);
+  const resetActiveItems = useDeviceStore(state => state.resetActiveItems);
+
 
 
   const fetchSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
@@ -190,6 +194,8 @@ function LocationPage() {
           setError('No sensor found for this location');
           return;
         }
+
+        setActiveSensor(locationSensor.sn);
   
         const sensorData = await fetchSensorData(
           locationSensor.sn,
@@ -213,6 +219,7 @@ function LocationPage() {
       fetchData();
       const interval = setInterval(fetchData, 600000);
       return () => clearInterval(interval);
+      resetActiveItems();
     }
   }, [locationId, currentDateRange]);
 
@@ -226,7 +233,6 @@ function LocationPage() {
       try {
         const sensorsResponse = await sensorsService.getSensors();
         
-        // Find the base sensor that's connected to this plant
         const plantSensor = sensorsResponse.sensor.find(
           (          sensor: { in_plant_id: string; plant_name: string; }) => sensor.in_plant_id === plantId && sensor.plant_name === plantName
         );
@@ -236,10 +242,8 @@ function LocationPage() {
           return;
         }
   
-        // Get the base sensor sn
         const baseSensorSN = plantSensor.sn;
   
-        // Find all entries for this base sensor to know which channels are used
         const allSensorEntries = sensorsResponse.sensor.filter(
           (          sensor: { sn: string; }) => sensor.sn === baseSensorSN
         );
@@ -296,6 +300,7 @@ function LocationPage() {
     window.addEventListener('plantSelected', handlePlantSelected);
     return () => window.removeEventListener('plantSelected', handlePlantSelected);
   }, [currentDateRange]);
+
 
   const handleDateRangeChange = async (startDate: Date, endDate: Date) => {
     if (!mainSensor) return;
