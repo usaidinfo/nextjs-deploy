@@ -38,6 +38,9 @@ interface DeviceState {
   setActiveSensor: (sn: string) => void;
   setActivePlant: (plantId: string, plantName: string) => void;
   resetActiveItems: () => void;
+  activeLocationId: string | null;
+  activeLocationName: string | null;
+  setActiveLocation: (id: string, name: string) => void;
 }
 
 export const useDeviceStore = create<DeviceState>((set) => ({
@@ -77,5 +80,11 @@ export const useDeviceStore = create<DeviceState>((set) => ({
     activeSensor: null, 
     activePlantId: null, 
     activePlantName: null 
-  })
+  }),
+  activeLocationId: null,  
+  activeLocationName: null,
+  setActiveLocation: (id, name) => set({ 
+    activeLocationId: id,
+    activeLocationName: name 
+  }),
 }));

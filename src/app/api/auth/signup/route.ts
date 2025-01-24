@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const body: SignUpRequest = await request.json();
 
-    const response = await fetch('https://mygrow.leafai.io/api/register.php', {
+    const response = await fetch('https://leafaiapi.projectsave.de/api/register.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

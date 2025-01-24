@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch('https://mygrow.leafai.io/api/create_plant.php', {
+    const response = await fetch('https://leafaiapi.projectsave.de/api/create_plant.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

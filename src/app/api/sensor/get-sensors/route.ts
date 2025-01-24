@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch('https://mygrow.leafai.io/api/get_sensor.php', {
+    const response = await fetch('https://leafaiapi.projectsave.de/api/get_sensor.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -43,6 +43,7 @@ const Sidebar = () => {
   const [showCreatePlantModal, setShowCreatePlantModal] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const setActivePlant = useDeviceStore(state => state.setActivePlant)
+  const setActiveLocation = useDeviceStore(state => state.setActiveLocation)
 
   const fetchLocations = async () => {
     try {
@@ -136,6 +137,10 @@ const Sidebar = () => {
   };
 
   const handleLocationClick = (locationId: string) => {
+    const location = locations.find(loc => loc.location_id === locationId);
+    if (location) {
+      setActiveLocation(locationId, location.location_name);
+    }
     router.push(`/dashboard/${locationId}`);
     toggleLocation(locationId);
   };

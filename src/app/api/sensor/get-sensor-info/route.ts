@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const token = request.headers.get('Token');
     const { sn } = await request.json();
 
-    const response = await fetch('https://mygrow.leafai.io/api/get_sn_info.php', {
+    const response = await fetch('https://leafaiapi.projectsave.de/api/get_sn_info.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const response = await fetch('https://mygrow.leafai.io/api/password-reset.php', {
+    const response = await fetch('https://leafaiapi.projectsave.de/api/password-reset.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

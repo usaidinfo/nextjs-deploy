@@ -187,7 +187,7 @@ function LocationPage() {
         }
   
         const locationSensor = sensorsResponse.sensor?.find(
-          (sensor: { location_id: string; }) => sensor.location_id === locationId
+          (sensor: { location_id: string; }) => sensor.location_id == locationId
         );
   
         if (!locationSensor) {

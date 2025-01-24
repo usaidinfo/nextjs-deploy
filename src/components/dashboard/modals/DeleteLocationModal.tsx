@@ -6,6 +6,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { locationService } from 'lib/services/location.service';
 import { useRouter } from 'next/navigation';
+import { useDeviceStore } from 'lib/store/deviceStore';
 
 interface DeleteLocationModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ const DeleteLocationModal: React.FC<DeleteLocationModalProps> = ({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const activeLocationName = useDeviceStore(state => state.activeLocationName);
 
   const handleConfirmDelete = async () => {
     setLoading(true);
@@ -59,7 +61,7 @@ const DeleteLocationModal: React.FC<DeleteLocationModalProps> = ({
       <DialogTitle className="text-white">Confirm Delete Location</DialogTitle>
       <DialogContent>
         <p className="text-zinc-300">
-          Are you sure you want to delete this location: {locationId}? This action cannot be undone.
+          Are you sure you want to delete this location: {activeLocationName}? This action cannot be undone.
         </p>
         {error && (
           <p className="mt-2 text-red-500 text-sm">{error}</p>

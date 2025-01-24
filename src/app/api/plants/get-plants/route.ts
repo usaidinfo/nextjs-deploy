@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       token: token ? 'exists' : 'missing'
     });
 
-    const response = await fetch('https://mygrow.leafai.io/api/get_plants.php', {
+    const response = await fetch('https://leafaiapi.projectsave.de/api/get_plants.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
