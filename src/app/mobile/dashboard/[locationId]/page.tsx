@@ -373,6 +373,8 @@ export default function LocationDashboardPage() {
         onDateRangeChange={handleDateRangeChange}
         isLoading={isLoading}
         currentDateRange={displayDateRange}
+        firstSensorValueAt={mainSensor.sensor.firstSensorValueAt}
+        lastSensorValueAt={mainSensor.sensor.lastSensorValueAt}
       />
 
       {selectedPlantSensor && (

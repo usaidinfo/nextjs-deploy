@@ -38,9 +38,9 @@ interface CreatePlantModalProps {
 }
 
 const SOIL_TYPES = [
-  { value: 'soil', label: 'Real Soil' },
-  { value: 'stone', label: 'Stone Fibre' },
-  { value: 'coconut', label: 'Coconut Fibre' }
+  { value: 'soil', label: 'Organic Soil' },
+  { value: 'stone', label: 'Rock Wool' },
+  { value: 'coconut', label: 'Coco\'s Substrat' }
 ];
 
 const CreatePlantModal: React.FC<CreatePlantModalProps> = ({

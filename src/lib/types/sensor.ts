@@ -43,6 +43,8 @@ export interface Sensor {
   sn_addonsensor_info?: {
     SENSOR_VALUE_FIELD: string;
   };
+  firstSensorValueAt: string;
+  lastSensorValueAt: string;
 }
 
 export interface PlantSensorWithData {

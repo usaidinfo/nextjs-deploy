@@ -110,7 +110,7 @@ const ChangeUsernameModal: React.FC<ChangeUsernameModalProps> = ({ isOpen, onClo
                    disabled:bg-blue-600/50 disabled:cursor-not-allowed
                    rounded-lg transition duration-200"
         >
-          {loading ? 'Changing...' : 'Change Password'}
+          {loading ? 'Changing...' : 'Change Username'}
         </button>
       </DialogActions>
     </Dialog>

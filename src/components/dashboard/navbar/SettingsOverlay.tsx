@@ -19,13 +19,13 @@ import ChangeUsernameModal from '../modals/ChangeUsernameModal';
 const getIcon = (iconType: string) => {
   switch (iconType) {
     case 'delete':
-      return <DeleteOutlineIcon fontSize="small" color='inherit' />;
+      return <DeleteOutlineIcon fontSize="small" sx={{ color: 'white' }} />;
     case 'password':
-      return <LockOutlinedIcon fontSize="small" color='inherit' />;
+      return <LockOutlinedIcon fontSize="small" sx={{ color: 'white' }}/>;
     case 'email':
-      return <EmailOutlinedIcon fontSize="small" color='inherit' />;
+      return <EmailOutlinedIcon fontSize="small"sx={{ color: 'white' }} />;
     case 'username':
-      return <PersonOutlineOutlinedIcon fontSize="small" color='inherit'/>;
+      return <PersonOutlineOutlinedIcon fontSize="small" sx={{ color: 'white' }}/>;
     default:
       return null;
   }
