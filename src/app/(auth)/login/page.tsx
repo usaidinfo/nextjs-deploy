@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import LoginForm from '@components/auth/LoginForm';
-import '../../globals.css';
-import Image from 'next/image';
-
+import LoginForm from "@components/auth/LoginForm";
+import { Suspense } from "react";
+import "../../globals.css";
+import Image from "next/image";
 
 export default function LoginPage() {
   return (
@@ -24,8 +24,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className="relative flex items-center justify-center bg-gradient"
-      >
+      <div className="relative flex items-center justify-center bg-gradient">
         <Image
           src="/leafai-logo3.png"
           alt="Leaf AI Logo"
@@ -35,17 +34,19 @@ export default function LoginPage() {
           priority
           unoptimized
         />
-        
-        
+
         <div className="absolute bottom-8 left-8 text-white/50 text-xs">
           © 2024, Made with ❤️ by Team Leaf AI
         </div>
 
         <div className="flex flex-col items-center p-8">
-          <LoginForm />
+          <Suspense
+            fallback={<div className="text-center text-white">Loading...</div>}
+          >
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </div>
   );
 }
-
