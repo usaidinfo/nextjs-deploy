@@ -12,6 +12,13 @@ export default function DeviceSetupPage() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const setDeviceSN = useDeviceStore(state => state.setDeviceSN);
+  const deviceSN = useDeviceStore(state => state.deviceSN);
+
+  useEffect(() => {
+    if (deviceSN) {
+      router.push('/mobile/location');
+    }
+  }, [deviceSN, router]);
 
   useEffect(() => {
     let html5QrCode: Html5Qrcode;

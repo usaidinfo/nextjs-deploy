@@ -10,6 +10,8 @@ import type { LoginRequest } from "lib/types/auth";
 import { useRouter } from "next/navigation";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import { useSearchParams } from 'next/navigation';
+import { useDeviceStore } from 'lib/store/deviceStore';
 
 const AnimatedInput = styled("div")({
   position: "relative",
@@ -87,6 +89,8 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const searchParams = useSearchParams();
+  const setDeviceSN = useDeviceStore(state => state.setDeviceSN);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -114,13 +118,20 @@ export default function LoginForm() {
         
         const cookieOptions = 'path=/; secure; samesite=strict';
         document.cookie = `token=${response.token}; ${cookieOptions}`;
-        const urlParams = new URLSearchParams(window.location.search);
-        const isSetup = urlParams.get("setup") === "true";
+        const isSetup = searchParams.get("setup") === "true";
+        const scannedSN = searchParams.get("sn");
         const isMobile = window.innerWidth <= 768;
 
         if (isMobile) {
           if (isSetup) {
-            router.push("/mobile/device-setup");
+            if (scannedSN) {
+              // Store SN and skip to location selection
+              setDeviceSN(scannedSN);
+              router.push("/mobile/location");
+            } else {
+              // Normal setup flow
+              router.push("/mobile/device-setup");
+            }
           } else {
             router.push("/mobile/dashboard");
           }

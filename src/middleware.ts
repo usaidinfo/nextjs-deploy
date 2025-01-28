@@ -3,11 +3,23 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const publicPaths = ['/login', '/signup', '/setup','/forget-password'];
-const publicFiles = ['/leafai-logo3.png', '/login-image.png', '/favicon.ico']; // Add any other public files
+const publicFiles = ['/leafai-logo3.png', '/login-image.png', '/favicon.ico'];
+
+const QR_SN_PATTERN = /\/ibn\/([a-zA-Z0-9]+)$/;
+
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const match = pathname.match(QR_SN_PATTERN);
+  if (match) {
+    const sn = match[1];
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('setup', 'true');
+    loginUrl.searchParams.set('sn', sn);
+    return NextResponse.redirect(loginUrl);
+  }
+  
   // Allow static files and images
   if (publicFiles.includes(pathname)) {
     return NextResponse.next();

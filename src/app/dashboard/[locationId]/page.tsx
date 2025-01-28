@@ -154,7 +154,9 @@ function LocationPage() {
         vwcChannel0Data: parsed.VWC_CHANNEL_0 ?? 0, 
         vwcChannel1Data: parsed.VWC_CHANNEL_1 ?? 0
       };
-    });
+    })
+    .reverse()
+
   
     return {
       sensorData: JSON.parse(validReadings[0].SENSORDATAJSON),

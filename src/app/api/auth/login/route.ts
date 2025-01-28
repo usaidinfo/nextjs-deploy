@@ -1,3 +1,4 @@
+// src/app/api/auth/login/route.ts
 import { NextResponse } from 'next/server';
 import type { LoginRequest } from 'lib/types/auth';
 
