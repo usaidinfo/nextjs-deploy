@@ -119,7 +119,7 @@ export default function LoginForm() {
         const cookieOptions = 'path=/; secure; samesite=strict';
         document.cookie = `token=${response.token}; ${cookieOptions}`;
         const isSetup = searchParams.get("setup") === "true";
-        const scannedSN = searchParams.get("sn");
+        const scannedSN = searchParams.get("LCSN"); 
         const isMobile = window.innerWidth <= 768;
 
         if (isMobile) {

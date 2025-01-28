@@ -16,10 +16,10 @@ export function middleware(request: NextRequest) {
     const sn = match[1];
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('setup', 'true');
-    loginUrl.searchParams.set('sn', sn);
+    loginUrl.searchParams.set('LCSN', sn);
     return NextResponse.redirect(loginUrl);
   }
-  
+
   // Allow static files and images
   if (publicFiles.includes(pathname)) {
     return NextResponse.next();
