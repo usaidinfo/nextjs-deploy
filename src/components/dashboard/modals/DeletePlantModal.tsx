@@ -21,20 +21,20 @@ const DeletePlantModal: React.FC<DeletePlantModalProps> = ({
   
   const activePlantId = useDeviceStore(state => state.activePlantId);
   const activePlantName = useDeviceStore(state => state.activePlantName);
-  const resetActiveItems = useDeviceStore(state => state.resetActiveItems);
 
   const handleConfirmDelete = async () => {
     if (!activePlantId) return;
     
     setLoading(true);
     setError(null);
-
+  
     try {
       const response = await plantService.deletePlant(activePlantId);
-
+  
       if (response.success) {
-        resetActiveItems();
-        window.dispatchEvent(new Event('locationDeleted'));
+        window.dispatchEvent(new CustomEvent('plantDeleted', {
+          detail: { plantId: activePlantId }
+        }));
         onClose();
       } else {
         setError(response.message || 'Failed to delete plant');

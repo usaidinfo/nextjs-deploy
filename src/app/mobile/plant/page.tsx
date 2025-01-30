@@ -92,7 +92,8 @@ export default function PlantSelectPage() {
   
       updateLatestSensor({
         ...latestSensor,
-        plantName: selectedPlant.plant_name
+        plantName: selectedPlant.plant_name,
+        plantId: selectedPlant.plant_id
       });
       
       router.push(`/mobile/device-details/${selectedLocation?.location_id}`);

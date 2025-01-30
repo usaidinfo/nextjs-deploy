@@ -16,13 +16,16 @@ interface ScannedSensor {
 interface Sensor extends ScannedSensor {
   image: string;
   plantName?: string;
+  plantId?: string;
   substrate?: string;
+  sn: string;
 }
 
 interface DeviceState {
   selectedLocation: Location | null;
   deviceSN: string | null;
   sensors: Sensor[];
+  setSensors: (sensors: Sensor[]) => void;
   selectedPlant: Plant | null;
   scannedSensor: ScannedSensor | null;
   setLocation: (location: Location) => void;
@@ -47,6 +50,7 @@ export const useDeviceStore = create<DeviceState>((set) => ({
   selectedLocation: null,
   deviceSN: null,
   sensors: [],
+  setSensors: (sensors) => set({ sensors }),
   selectedPlant: null,
   scannedSensor: null,
   setLocation: (location) => set({ selectedLocation: location }),

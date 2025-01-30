@@ -2,8 +2,8 @@ import { ChartData } from "@components/dashboard/widgets/EnvironmentChart";
 import { PlantChartData } from "@components/dashboard/widgets/PlantSensorChart";
 
 export interface SensorData {
-  LeafWetness: string;
-  LeafTemp: string;
+  LeafWetness?: string;
+  LeafTemp?: string;
   LCSN: string;
   LCFW: string;
   AirHum: number;

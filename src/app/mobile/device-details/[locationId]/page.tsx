@@ -9,7 +9,9 @@ import { useEffect, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { SENSOR_IMAGES } from 'lib/constants/sensor-types';
 import { sensorsService } from 'lib/services/sensor.service';
-
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteSensorModal from '@components/dashboard/modals/DeleteSensorModal';
+import DeletePlantModal from '@components/dashboard/modals/DeletePlantModal';
 
 export default function DeviceDetailsPage() {
   const router = useRouter();
@@ -20,14 +22,39 @@ export default function DeviceDetailsPage() {
   const sensors = useDeviceStore(state => state.sensors);
   const setScannedSensor = useDeviceStore(state => state.setScannedSensor);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [showDeleteSensorModal, setShowDeleteSensorModal] = useState(false);
+  const [selectedSensorSN, setSelectedSensorSN] = useState<string | null>(null);
+  const [showDeletePlantModal, setShowDeletePlantModal] = useState(false);
+  const setActivePlant = useDeviceStore(state => state.setActivePlant); 
+  const setSensors = useDeviceStore(state => state.setSensors);
 
 
 
  const deviceDetails = {
-   location: selectedLocation?.location_name || '',
+   location: selectedLocation?.location_name || 'No location',
    deviceName: 'Leaf-Connect Lite',
-   serialNumber: deviceSN || 'SN-12345-ABC'
+   serialNumber: deviceSN || 'No SN connected'
  };
+
+ useEffect(() => {
+  const handlePlantDeleted = (event: CustomEvent) => {
+    const plantId = event.detail?.plantId;
+    if (plantId) {
+      const updatedSensors = sensors.map(sensor => {
+        if (sensor.plantId === plantId) {
+          return { ...sensor, plantId: undefined, plantName: undefined };
+        }
+        return sensor;
+      });
+      setSensors(updatedSensors);
+    }
+  };
+
+  window.addEventListener('plantDeleted', handlePlantDeleted as EventListener);
+  return () => {
+    window.removeEventListener('plantDeleted', handlePlantDeleted as EventListener);
+  };
+}, [sensors, setSensors]);
 
  useEffect(() => {
   let html5QrCode: Html5Qrcode;
@@ -91,6 +118,27 @@ const handleLetsGrow = async () => {
   router.push('/mobile/dashboard');
 };
 
+const handleSensorDeleted = () => {
+  if (selectedSensorSN === deviceSN) {
+    useDeviceStore.setState({ 
+      deviceSN: null,
+      sensors: []
+    });
+  } else {
+    const updatedSensors = sensors.filter(s => s.sn !== selectedSensorSN);
+    setSensors(updatedSensors);
+  }
+  setShowDeleteSensorModal(false);
+  setSelectedSensorSN(null);
+};
+
+const handleDeletePlant = (plantName: string | undefined, plantId: string | undefined) => {
+  if (plantName && plantId) {
+    setActivePlant(plantId, plantName);
+    setShowDeletePlantModal(true);
+  }
+};
+
 if (showQRScanner) {
   return (
     <div className="min-h-[100dvh] bg-gradient flex flex-col p-4">
@@ -131,7 +179,16 @@ if (showQRScanner) {
      </h1>
 
      <div className="flex-1 flex flex-col gap-5">
-       <div className="bg-[rgba(24,24,27,0.5)] rounded-3xl shadow-[0_0_15px_rgba(255,255,255,0.1)] p-6">
+       <div className="bg-[rgba(24,24,27,0.5)] rounded-3xl shadow-[0_0_15px_rgba(255,255,255,0.1)] p-6 relative">
+         <button
+           onClick={() => {
+             setSelectedSensorSN(deviceSN || '');
+             setShowDeleteSensorModal(true);
+           }}
+           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+         >
+           <CloseIcon sx={{ fontSize: 20 }} />
+         </button>
          <div className="flex gap-6">
            <div className="w-1/3">
              <img
@@ -160,7 +217,20 @@ if (showQRScanner) {
        </div>
 
        {sensors.map((sensor, index) => (
-         <div key={index} className="bg-[rgba(24,24,27,0.5)] rounded-3xl shadow-[0_0_15px_rgba(255,255,255,0.1)] p-6">
+         <div
+           key={index}
+           className="bg-[rgba(24,24,27,0.5)] rounded-3xl shadow-[0_0_15px_rgba(255,255,255,0.1)] p-6 relative"
+         >
+           <button
+             onClick={() => {
+              if (sensor.plantName && sensor.plantId) {
+                  handleDeletePlant(sensor.plantName, sensor.plantId);
+               }
+             }}
+             className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+           >
+             <CloseIcon sx={{ fontSize: 20 }} />
+           </button>
            <div className="flex gap-6">
              <div className="w-1/3">
                <img
@@ -171,14 +241,14 @@ if (showQRScanner) {
              </div>
              <div className="w-2/3 text-white">
                <div className="space-y-4">
-                {sensor.plantName && (
-                    <div>
-                      <p className="text-gray-400 text-sm">Plant</p>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{sensor.plantName}</p>
-                      </div>
-                    </div>
-                  )}
+                 {sensor.plantName && (
+                   <div>
+                     <p className="text-gray-400 text-sm">Plant</p>
+                     <div className="flex items-center gap-2">
+                       <p className="font-medium">{sensor.plantName}</p>
+                     </div>
+                   </div>
+                 )}
                  <div>
                    <p className="text-gray-400 text-sm">Sensor Type</p>
                    <p className="font-medium">{sensor.type}</p>
@@ -198,18 +268,20 @@ if (showQRScanner) {
            </div>
          </div>
        ))}
-       
 
        <div className="flex-1 flex flex-col items-center justify-center">
-         <p className="text-white font-light text-2xl text-center px-4 mb-6">Would you like to add a sensor?</p>
+         <p className="text-white font-light text-2xl text-center px-4 mb-6">
+           Would you like to add a sensor?
+         </p>
          <div className="flex gap-4">
            <button
              onClick={handleLetsGrow}
              disabled={isNavigating}
-             className={`px-8 py-3 rounded-xl text-black bg-white text-sm font-medium ${isNavigating ? 'opacity-75 cursor-not-allowed' : ''
-               }`}
+             className={`px-8 py-3 rounded-xl text-black bg-white text-sm font-medium ${
+               isNavigating ? "opacity-75 cursor-not-allowed" : ""
+             }`}
            >
-             {isNavigating ? 'Loading...' : 'Let\'s Grow'}
+             {isNavigating ? "Loading..." : "Let's Grow"}
            </button>
            <button
              onClick={() => setShowQRScanner(true)}
@@ -227,9 +299,28 @@ if (showQRScanner) {
          onClick={() => router.back()}
          className="w-12 h-12 flex items-center justify-center text-black rounded-full bg-white"
        >
-         <ArrowBackIcon sx={{ fontSize: 18, fontWeight: 300 }}/>
+         <ArrowBackIcon sx={{ fontSize: 18, fontWeight: 300 }} />
        </button>
      </div>
+
+     {showDeleteSensorModal && selectedSensorSN && (
+       <DeleteSensorModal
+         isOpen={showDeleteSensorModal}
+         onClose={() => {
+           setShowDeleteSensorModal(false);
+           setSelectedSensorSN(null);
+         }}
+         sn={selectedSensorSN}
+         onDeleted={handleSensorDeleted}
+       />
+     )}
+
+     {showDeletePlantModal && (
+       <DeletePlantModal
+         isOpen={showDeletePlantModal}
+         onClose={() => setShowDeletePlantModal(false)}
+       />
+     )}
    </div>
  );
 }
