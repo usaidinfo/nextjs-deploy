@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { SENSOR_MEASUREMENTS, SENSOR_PRODUCT_TYPES, SENSOR_SUBSTRATE_REQUIRED } from "lib/constants/sensor-types";
+import { QRValidationResponse, SNInfoResponse } from "lib/types/sensor";
 
 export default interface DeviceInfo {
   sn: string;
@@ -153,7 +154,7 @@ class SensorsService {
     }
   }
 
-  async validateQRData(qrData: string) {
+  async validateQRData(qrData: string): Promise<QRValidationResponse> {
     try {
       const url = new URL(qrData);
       if (!url.hostname.includes('leafai')) {
@@ -178,7 +179,8 @@ class SensorsService {
           data: {
             sn: snValidation.info[0].SN,
             type: snValidation.info[0].ProductTpye,
-            info: JSON.parse(snValidation.info[0].Info)
+            info: JSON.parse(snValidation.info[0].Info),
+            sensor_existing: snValidation.info[0].sensor_existing
           }
         };
       }
@@ -235,7 +237,7 @@ class SensorsService {
     }
   }
 
-  async getSNInfo(sn: string) {
+  async getSNInfo(sn: string): Promise<SNInfoResponse> {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/sensor/get-sensor-info', {

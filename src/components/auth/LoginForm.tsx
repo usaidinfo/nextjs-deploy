@@ -12,7 +12,9 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useSearchParams } from 'next/navigation';
 import { useDeviceStore } from 'lib/store/deviceStore';
-import { sensorsService } from "lib/services/sensor.service";
+import { validateAndProcessSensor } from "lib/utils/sensor-validator";
+import { SENSOR_IMAGES, SensorType  } from "lib/constants/sensor-types";
+import { Sensor2 } from "lib/types/sensor";
 
 const AnimatedInput = styled("div")({
   position: "relative",
@@ -126,15 +128,40 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       if (isMobile) {
         if (isSetup) {
           if (scannedSN) {
-            const validation = await sensorsService.validateQRData(`https://mygrow.leafai.de/ibn/${scannedSN}`);
-            if (validation.isValid && validation.data?.type === 'lclite') {
-              setDeviceSN(scannedSN);
-              router.push("/mobile/location");
+            const sensorValidation = await validateAndProcessSensor(
+              `https://mygrow.leafai.de/ibn/${scannedSN}`
+            );
+          
+            if (sensorValidation.success && sensorValidation.data) {
+              if (sensorValidation.isExisting && 'deviceSN' in sensorValidation.data) {
+                setDeviceSN(sensorValidation.data.deviceSN);
+                useDeviceStore.setState({
+                  selectedLocation: {
+                    id: Number(sensorValidation.data.location.locationId),
+                    location_id: sensorValidation.data.location.locationId,
+                    location_name: sensorValidation.data.location.locationName
+                  },
+                  sensors: sensorValidation.data.connectedSensors.map(sensor => ({
+                    sn: sensor.sn,
+                    type: sensor.type as SensorType,
+                    plant_name: sensor.plant_name,
+                    in_plant_id: sensor.in_plant_id,
+                    substrate: sensor.substrate,
+                    image: SENSOR_IMAGES[sensor.type as SensorType] || '/sensor-default.png',
+                    measurements: [], 
+                    hasSubstrate: Boolean(sensor.substrate)
+                  } satisfies Sensor2))
+                });
+                router.push(`/mobile/device-details/${sensorValidation.data.location.locationId}`);
+              } else if ('sn' in sensorValidation.data) {
+                setDeviceSN(sensorValidation.data.sn);
+                router.push('/mobile/location');
+              }          
             } else {
-              router.push("/mobile/device-setup");
+              router.push('/mobile/device-setup');
             }
           } else {
-            router.push("/mobile/device-setup");
+            router.push('/mobile/device-setup');
           }
         } else {
           router.push("/mobile/dashboard");
