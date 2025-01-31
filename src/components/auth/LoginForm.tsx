@@ -12,6 +12,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useSearchParams } from 'next/navigation';
 import { useDeviceStore } from 'lib/store/deviceStore';
+import { sensorsService } from "lib/services/sensor.service";
 
 const AnimatedInput = styled("div")({
   position: "relative",
@@ -101,53 +102,57 @@ export default function LoginForm() {
     setError("");
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (isLoading) return;
-    setError('');
-    setIsLoading(true);
-  
-    try {
-      const response = await authService.login({
-        username: formData.username,
-        password: formData.password,
-      });
-  
-      if (response.success && response.token) {
-        localStorage.setItem('token', response.token);
-        
-        const cookieOptions = 'path=/; secure; samesite=strict';
-        document.cookie = `token=${response.token}; ${cookieOptions}`;
-        const isSetup = searchParams.get("setup") === "true";
-        const scannedSN = searchParams.get("LCSN"); 
-        const isMobile = window.innerWidth <= 768;
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  if (isLoading) return;
+  setError('');
+  setIsLoading(true);
 
-        if (isMobile) {
-          if (isSetup) {
-            if (scannedSN) {
-              // Store SN and skip to location selection
+  try {
+    const response = await authService.login({
+      username: formData.username,
+      password: formData.password,
+    });
+
+    if (response.success && response.token) {
+      localStorage.setItem('token', response.token);
+      const cookieOptions = 'path=/; secure; samesite=strict';
+      document.cookie = `token=${response.token}; ${cookieOptions}`;
+      
+      const isSetup = searchParams.get("setup") === "true";
+      const scannedSN = searchParams.get("LCSN"); 
+      const isMobile = window.innerWidth <= 768;
+
+      if (isMobile) {
+        if (isSetup) {
+          if (scannedSN) {
+            const validation = await sensorsService.getSNInfo(scannedSN);
+            if (validation.success && validation.info?.[0]) {
               setDeviceSN(scannedSN);
               router.push("/mobile/location");
             } else {
-              // Normal setup flow
-              router.push("/mobile/device-setup");
+              setError('Invalid device serial number');
+              return;
             }
           } else {
-            router.push("/mobile/dashboard");
+            router.push("/mobile/device-setup");
           }
         } else {
-          router.push("/dashboard");
+          router.push("/mobile/dashboard");
         }
       } else {
-        setError(response.message || 'Login failed');
+        router.push("/dashboard");
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
+    } else {
+      setError(response.message || 'Login failed');
     }
-  };
+  } catch (error) {
+    console.error('Login error:', error);
+    setError('An error occurred. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <ThemeProvider theme={darkTheme}>

@@ -4,8 +4,8 @@ import { withAuth } from "lib/utils/auth";
 import EnvironmentWidget from "@components/dashboard/widgets/EnvironmentWidget";
 import ChartWidget from "@components/dashboard/widgets/EnvironmentChart";
 import { sensorsService } from 'lib/services/sensor.service';
-import type { MainSensorWithData, PlantSensorWithData, SensorValue } from 'lib/types/sensor';
-import type { MainReadingData, PlantReadingData } from 'lib/types/environment';
+import type { MainSensorWithData, PlantSensorWithData } from 'lib/types/sensor';
+import type { PlantReadingData } from 'lib/types/environment';
 import { useParams } from 'next/navigation';
 import { EnvironmentWidgetSkeleton } from '@components/dashboard/skeletons/EnvironmentWidgetSkeleton';
 import { ChartWidgetSkeleton } from '@components/dashboard/skeletons/ChartWidgetSkeleton';
@@ -13,6 +13,10 @@ import { format } from 'date-fns';
 import PlantSensorWidget from '@components/dashboard/widgets/PlantSensorWidget';
 import PlantSensorChart from '@components/dashboard/widgets/PlantSensorChart';
 import { useDeviceStore } from 'lib/store/deviceStore';
+import fetchSensorData from 'lib/optimize/fetchSensorData';
+import NoSensorConnected from '@components/dashboard/no-data-widgets/NoSensorConnected';
+import CustomErrorWidget from '@components/dashboard/no-data-widgets/CustomErrorWidget';
+import { fetchData } from 'lib/optimize/fetchData';
 
 interface PlantSelectedEvent {
   plantId: string;
@@ -34,71 +38,7 @@ function LocationPage() {
     endDate: new Date()
   });
   const setActiveSensor = useDeviceStore(state => state.setActiveSensor);
-  const resetActiveItems = useDeviceStore(state => state.resetActiveItems);
-
-
-
-  const fetchSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
-    const valuesResponse = await sensorsService.getSensorValues(sensorSN, startDate, endDate);
-    
-    if (!valuesResponse.success || !valuesResponse.sensorvalue?.length) {
-      throw new Error('No sensor data available');
-    }
-  
-    const allReadings = valuesResponse.sensorvalue.sort((a: SensorValue, b: SensorValue) => 
-      new Date(b.CreateDateTime).getTime() - new Date(a.CreateDateTime).getTime()
-    )
-  
-    const mostRecentReading = allReadings[0];
-    const mostRecentTime = new Date(mostRecentReading.CreateDateTime);
-    const fourHoursBeforeMostRecent = new Date(mostRecentTime.getTime() - (4 * 60 * 60 * 1000));
-  
-    const filteredReadings = isDateRangeSelected
-      ? allReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
-          const readingTime = new Date(reading.CreateDateTime);
-          const rangeStartTime = new Date(startDate);
-          rangeStartTime.setHours(0, 0, 0, 0);
-          const rangeEndTime = new Date(endDate);
-          rangeEndTime.setHours(23, 59, 59, 999);
-          return readingTime >= rangeStartTime && readingTime <= rangeEndTime;
-        })
-      : allReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
-          const readingTime = new Date(reading.CreateDateTime);
-          return readingTime >= fourHoursBeforeMostRecent && readingTime <= mostRecentTime;
-        });
-  
-    if (filteredReadings.length === 0) {
-      throw new Error('No data available for selected time range');
-    }
-  
-    const readings = filteredReadings
-      .map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
-        const parsed = JSON.parse(reading.SENSORDATAJSON);
-        const readingDateTime = new Date(reading.CreateDateTime);
-        
-        return {
-          time: format(readingDateTime, isDateRangeSelected ? 'MMM dd HH:mm' : 'HH:mm'),
-          temp: parsed.AirTemp,
-          humidity: parsed.AirHum,
-          vpd: parsed.AirVPD,
-          co2: parsed.AirCO2
-        } as MainReadingData;
-      })
-      .sort((a: { time: string | number | Date; }, b: { time: string | number | Date; }) => new Date(a.time).getTime() - new Date(b.time).getTime())
-      .reverse()
-      
-    return {
-      sensorData: JSON.parse(allReadings[0].SENSORDATAJSON),
-      chartData: {
-        months: readings.map((r: { time: MainReadingData; }) => r.time),
-        tempData: readings.map((r: { temp: MainReadingData; }) => r.temp),
-        humidityData: readings.map((r: { humidity: MainReadingData; }) => r.humidity),
-        vpdData: readings.map((r: { vpd: MainReadingData; }) => r.vpd),
-        co2Data: readings.map((r: { co2: MainReadingData; }) => r.co2)
-      },
-      historicalData: allReadings
-    };
-  };
+  const resetActiveItems = useDeviceStore(state => state.resetActiveItems);    
   
 
   const fetchPlantSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
@@ -178,48 +118,25 @@ function LocationPage() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const sensorsResponse = await sensorsService.getSensors();
-        
-        if (!sensorsResponse.success) {
-          setError('Failed to fetch sensors');
-          return;
-        }
-  
-        const locationSensor = sensorsResponse.sensor?.find(
-          (sensor: { location_id: string; }) => sensor.location_id == locationId
-        );
-  
-        if (!locationSensor) {
-          setError('No sensor found for this location');
-          return;
-        }
-
-        setActiveSensor(locationSensor.sn);
-  
-        const sensorData = await fetchSensorData(
-          locationSensor.sn,
-          currentDateRange.startDate,
-          currentDateRange.endDate
-        );
-  
-        setMainSensor({
-          sensor: locationSensor,
-          ...sensorData
-        });
-  
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to fetch sensor data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
     if (locationId) {
-      fetchData();
-      const interval = setInterval(fetchData, 600000);
+      fetchData(
+        locationId,
+        currentDateRange,
+        setIsLoading,
+        setActiveSensor,
+        setMainSensor,
+        setError
+      );
+      const interval = setInterval(() => {
+        fetchData(
+          locationId,
+          currentDateRange,
+          setIsLoading,
+          setActiveSensor,
+          setMainSensor,
+          setError
+        );
+      }, 600000);
       return () => clearInterval(interval);
       resetActiveItems();
     }
@@ -359,24 +276,7 @@ function LocationPage() {
 
   if (error || !mainSensor) {
     return (
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col lg:flex-row gap-3">
-          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex flex-col items-center justify-center min-h-[400px]">
-            <div className="text-zinc-400 mb-4">
-              <img src="/cloud.png" alt="No Data" className="w-16 h-16 object-contain" />
-            </div>
-            <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
-            <p className="text-zinc-400 text-center">{error}</p>
-          </div>
-          <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 flex flex-col items-center justify-center min-h-[400px]">
-            <div className="text-zinc-400 mb-4">
-              <img src="/cloud.png" alt="No Data" className="w-16 h-16 object-contain" />
-            </div>
-            <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
-            <p className="text-zinc-400 text-center">{error}</p>
-          </div>
-        </div>
-      </div>
+      <CustomErrorWidget error={error}/>
     );
   }
 
@@ -402,28 +302,7 @@ function LocationPage() {
         <div className="flex flex-col lg:flex-row gap-3">
           {!selectedPlantSensor.sensorData || selectedPlantSensor.sensorData.SensorType === 255 ? (
             <>
-              <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-2/5 flex flex-col items-center justify-center min-h-[400px]">
-                <div className="text-zinc-400 mb-4">
-                  <img
-                    src="/cloud.png"
-                    alt="No Data"
-                    className="w-16 h-16 object-contain"
-                  />
-                </div>
-                <p className="text-zinc-400 text-2xl font-bold mb-2">No Data Found</p>
-                <p className="text-zinc-400 text-center">No sensor connected to this plant</p>
-              </div>
-              <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 flex flex-col items-center justify-center min-h-[400px]">
-                <div className="text-zinc-400 mb-4">
-                  <img
-                    src="/cloud.png"
-                    alt="No Data"
-                    className="w-16 h-16 object-contain"
-                  />
-                </div>
-                <p className="text-zinc-400 text-2xl font-bold mb-2">No Chart Data</p>
-                <p className="text-zinc-400 text-center">No sensor connected to this plant</p>
-              </div>
+            <NoSensorConnected/>
             </>
           ) : (
             <>
