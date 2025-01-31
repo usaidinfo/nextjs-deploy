@@ -126,13 +126,12 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       if (isMobile) {
         if (isSetup) {
           if (scannedSN) {
-            const validation = await sensorsService.getSNInfo(scannedSN);
-            if (validation.success && validation.info?.[0]) {
+            const validation = await sensorsService.validateQRData(`https://mygrow.leafai.de/ibn/${scannedSN}`);
+            if (validation.isValid && validation.data?.type === 'lclite') {
               setDeviceSN(scannedSN);
               router.push("/mobile/location");
             } else {
-              setError('Invalid device serial number');
-              return;
+              router.push("/mobile/device-setup");
             }
           } else {
             router.push("/mobile/device-setup");
