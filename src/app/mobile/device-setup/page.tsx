@@ -5,20 +5,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useDeviceStore } from 'lib/store/deviceStore';
-import { sensorsService } from 'lib/services/sensor.service';
+import { setupDeviceState, validateAndProcessQRCode } from 'lib/utils/sensor-validator';
 
 export default function DeviceSetupPage() {
   const router = useRouter();
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const setDeviceSN = useDeviceStore(state => state.setDeviceSN);
-  const deviceSN = useDeviceStore(state => state.deviceSN);
-
-  useEffect(() => {
-    if (deviceSN) {
-      router.push('/mobile/location');
-    }
-  }, [deviceSN, router]);
 
   useEffect(() => {
     let html5QrCode: Html5Qrcode;
@@ -37,19 +30,25 @@ export default function DeviceSetupPage() {
         config,
         async (decodedText) => {
           try {
-            const validation = await sensorsService.validateQRData(decodedText);
-            
-            if (validation.isValid && validation.data) {
+            const validation = await validateAndProcessQRCode(decodedText);
+            if (validation.success) {
               html5QrCode.stop();
-              setDeviceSN(validation.data.sn);
-              setShowQRScanner(false);
+              
+              if (validation.isExisting) {
+                const success = setupDeviceState(validation);
+                if (success && validation.deviceInfo) {
+                  router.push(`/mobile/device-details/${validation.deviceInfo.location.location_id}`);
+                  return;
+                }
+              }
+              
+              setDeviceSN(validation.deviceSN || '');
               router.push('/mobile/location');
             } else {
               setScanError(validation.error || 'Invalid QR code');
             }
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (err) {
-            setScanError('Error validating device');
+            setScanError(`Error validating device1: ${err}`);
           }
         },
         (errorMessage) => {

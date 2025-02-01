@@ -95,6 +95,7 @@ export interface SNInfoResponse {
   success: boolean;
   message?: string;
   info?: SNInfo[];
+  sensor_existing: boolean;
 }
 
 export interface QRValidationResponse {

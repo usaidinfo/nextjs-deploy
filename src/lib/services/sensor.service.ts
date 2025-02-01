@@ -251,7 +251,7 @@ class SensorsService {
       return await response.json();
     } catch (error) {
       console.error('error fetching SN Info: ', error)
-      return { success: false, message: 'Failed to validate device' };
+      return { success: false, message: 'Failed to validate device', sensor_existing: false };
     }
   }
 
