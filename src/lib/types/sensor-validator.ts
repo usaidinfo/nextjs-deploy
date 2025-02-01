@@ -19,6 +19,7 @@ export interface ValidationResult {
     location: Location;
     connectedSensors: ValidatedSensor[];
   };
+  deviceSN?: string;  // Add this line
 }
 
 export interface SNInfo {

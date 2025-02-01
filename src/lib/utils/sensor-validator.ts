@@ -7,102 +7,107 @@ import { useDeviceStore } from '../store/deviceStore';
 
 export const validateAndProcessQRCode = async (qrUrl: string): Promise<ValidationResult> => {
   try {
-    const validation = await sensorsService.validateQRData(qrUrl);
+    const snValidation = await sensorsService.validateQRData(qrUrl);
     
-    if (!validation.isValid || !validation.data) {
-      return { success: false, error: validation.error || 'Invalid QR code' };
-    }
+    if (!snValidation.isValid || !snValidation.data) {
+        return { success: false, error: snValidation.error || 'Invalid QR code' };
+      }
 
     // If sensor doesn't exist, return basic validation
-    if (!validation.data.sensor_existing) {
-      return { 
-        success: true,
-        isExisting: false
-      };
-    }
+    if (!snValidation.data.sensor_existing) {
+        return { 
+          success: true,
+          isExisting: false,
+          deviceSN: snValidation.data.sn
+        };
+      }
 
-    // Fetch sensor details
-    const sensorsResponse = await sensorsService.getSensors();
-    if (!sensorsResponse.success || !sensorsResponse.sensor) {
-      return { success: false, error: 'Failed to fetch sensor details' };
-    }
+      const sensorsResponse = await sensorsService.getSensors();
+      if (!sensorsResponse.success || !sensorsResponse.sensor) {
+        return { success: false, error: 'Failed to fetch sensor details' };
+      }
 
-    const lcliteSensors = sensorsResponse.sensor.filter(
-      (sensor: Sensor) => sensor.sn === validation.data?.sn
-    );
+      const lcliteSensors = sensorsResponse.sensor.filter(
+        (sensor: Sensor) => sensor.sn === snValidation.data?.sn
+      );
 
-    if (!lcliteSensors.length) {
-      return { success: false, error: 'Sensor not found' };
-    }
+      if (!lcliteSensors.length) {
+        return { success: false, error: 'Sensor not found' };
+      }
 
-    const primarySensor = lcliteSensors[0];
+      const primarySensor = lcliteSensors[0];
 
     const validatedSensors: ValidatedSensor[] = [];
     
     for (const sensor of lcliteSensors) {
-      if (sensor.sn_addonsensor) {
-        const addonInfo = await sensorsService.getSNInfo(sensor.sn_addonsensor);
-        
-        if (addonInfo.success && addonInfo.info?.[0]) {
-          const sensorType = SENSOR_PRODUCT_TYPES[addonInfo.info[0].ProductTpye];
+        if (sensor.sn_addonsensor) {
+          const addonInfo = await sensorsService.getSNInfo(sensor.sn_addonsensor);
           
-          if (sensorType) {
-            validatedSensors.push({
-              sn: sensor.sn_addonsensor,
-              type: sensorType,
-              plantName: sensor.plant_name,
-              inPlantId: sensor.in_plant_id,
-              substrate: sensor.plant_soiltype
-            });
+          if (addonInfo.success && addonInfo.info?.[0]) {
+            const sensorType = SENSOR_PRODUCT_TYPES[addonInfo.info[0].ProductTpye];
+            
+            if (sensorType) {
+              validatedSensors.push({
+                sn: sensor.sn_addonsensor,
+                type: sensorType,
+                plantName: sensor.plant_name,
+                inPlantId: sensor.in_plant_id,
+                substrate: sensor.plant_soiltype
+              });
+            }
           }
         }
       }
-    }
 
-    return {
-      success: true,
-      isExisting: true,
-      deviceInfo: {
-        sn: validation.data.sn,
-        location: {
-          location_id: primarySensor.location_id,
-          location_name: primarySensor.in_location,
-          id: Number(primarySensor.location_id)
-        },
-        connectedSensors: validatedSensors
+      return {
+        success: true,
+        isExisting: true,
+        deviceInfo: {
+          sn: snValidation.data.sn,
+          location: {
+            location_id: primarySensor.location_id,
+            location_name: primarySensor.in_location,
+            id: Number(primarySensor.location_id)
+          },
+          connectedSensors: validatedSensors
+        }
+      };
+
+    } catch (error) {
+        console.error('Validation error:', error);
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Validation failed' 
+        };
       }
     };
 
-  } catch (error) {
-    console.error('Validation error:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Validation failed' 
-    };
-  }
-};
-
-export const setupDeviceState = (validationResult: ValidationResult) => {
-  if (!validationResult.success || !validationResult.deviceInfo) {
-    return false;
-  }
-
-  const { deviceInfo } = validationResult;
-
-  useDeviceStore.setState({
-    deviceSN: deviceInfo.sn,
-    selectedLocation: deviceInfo.location,
-    sensors: deviceInfo.connectedSensors.map(sensor => ({
-      sn: sensor.sn,
-      type: sensor.type,
-      plantName: sensor.plantName || undefined,
-      plantId: sensor.inPlantId || undefined,
-      substrate: sensor.substrate || undefined,
-      image: SENSOR_IMAGES[sensor.type],
-      measurements: [],
-      hasSubstrate: Boolean(sensor.substrate)
-    }))
-  });
-
-  return true;
-};
+    export const setupDeviceState = (validationResult: ValidationResult) => {
+        if (!validationResult.success) return false;
+      
+        if (!validationResult.isExisting) {
+          useDeviceStore.setState({ deviceSN: validationResult.deviceSN });
+          return false;
+        }
+      
+        if (!validationResult.deviceInfo) return false;
+      
+        const { deviceInfo } = validationResult;
+      
+        useDeviceStore.setState({
+          deviceSN: deviceInfo.sn,
+          selectedLocation: deviceInfo.location,
+          sensors: deviceInfo.connectedSensors.map(sensor => ({
+            sn: sensor.sn,
+            type: sensor.type,
+            plantName: sensor.plantName || undefined,
+            plantId: sensor.inPlantId || undefined,
+            substrate: sensor.substrate || undefined,
+            image: SENSOR_IMAGES[sensor.type],
+            measurements: [],
+            hasSubstrate: Boolean(sensor.substrate)
+          }))
+        });
+      
+        return true;
+      };
