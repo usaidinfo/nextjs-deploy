@@ -1,86 +1,108 @@
+// src/lib/utils/sensor-validation.ts
 import { sensorsService } from '../services/sensor.service';
-import { SENSOR_PRODUCT_TYPES } from '../constants/sensor-types';
-import type { Sensor, ProcessedSensorData, ValidationResult } from '../types/sensor';
+import { SENSOR_PRODUCT_TYPES, SENSOR_IMAGES } from '../constants/sensor-types';
+import type { ValidationResult, ValidatedSensor } from '../types/sensor-validator';
+import type { Sensor } from '../types/sensor';
+import { useDeviceStore } from '../store/deviceStore';
 
-export const validateAndProcessSensor = async (qrData: string): Promise<ValidationResult> => {
+export const validateAndProcessQRCode = async (qrUrl: string): Promise<ValidationResult> => {
   try {
-    const validation = await sensorsService.validateQRData(qrData);
+    const validation = await sensorsService.validateQRData(qrUrl);
     
     if (!validation.isValid || !validation.data) {
       return { success: false, error: validation.error || 'Invalid QR code' };
     }
 
+    // If sensor doesn't exist, return basic validation
     if (!validation.data.sensor_existing) {
       return { 
-        success: true, 
-        isExisting: false,
-        data: {
-          sn: validation.data.sn,
-          type: validation.data.type,
-          info: validation.data.info
-        }
+        success: true,
+        isExisting: false
       };
     }
 
+    // Fetch sensor details
     const sensorsResponse = await sensorsService.getSensors();
-    
-    if (!sensorsResponse.success) {
+    if (!sensorsResponse.success || !sensorsResponse.sensor) {
       return { success: false, error: 'Failed to fetch sensor details' };
     }
 
-    const lcliteSN = validation.data.sn;
-    const matchingSensors = sensorsResponse.sensor.filter(
-      (sensor: Sensor) => sensor.sn === lcliteSN
+    const lcliteSensors = sensorsResponse.sensor.filter(
+      (sensor: Sensor) => sensor.sn === validation.data?.sn
     );
 
-    if (!matchingSensors.length) {
-      return { success: false, error: 'Sensor not found in account' };
+    if (!lcliteSensors.length) {
+      return { success: false, error: 'Sensor not found' };
     }
 
-    const locationDetails = {
-      locationId: matchingSensors[0].location_id,
-      locationName: matchingSensors[0].in_location
-    };
+    const primarySensor = lcliteSensors[0];
 
-    const connectedSensors = await Promise.all(
-      matchingSensors
-        .filter((sensor: { sn_addonsensor: string | null }) => sensor.sn_addonsensor)
-        .map(async (sensor: { sn_addonsensor: string; plant_name: string | null; in_plant_id: number | null; plant_soiltype: string | null; }) => {
-          if (!sensor.sn_addonsensor) return null;
+    const validatedSensors: ValidatedSensor[] = [];
+    
+    for (const sensor of lcliteSensors) {
+      if (sensor.sn_addonsensor) {
+        const addonInfo = await sensorsService.getSNInfo(sensor.sn_addonsensor);
+        
+        if (addonInfo.success && addonInfo.info?.[0]) {
+          const sensorType = SENSOR_PRODUCT_TYPES[addonInfo.info[0].ProductTpye];
           
-          const addonInfo = await sensorsService.getSNInfo(sensor.sn_addonsensor);
-          
-          if (addonInfo.success && addonInfo.info?.[0]) {
-            const productType = addonInfo.info[0].ProductTpye;
-            return {
+          if (sensorType) {
+            validatedSensors.push({
               sn: sensor.sn_addonsensor,
-              type: SENSOR_PRODUCT_TYPES[productType] || 'Unknown Sensor',
-              plantName: sensor.plant_name || undefined,
-              plantId: sensor.in_plant_id || undefined,
-              substrate: sensor.plant_soiltype || undefined
-            };
+              type: sensorType,
+              plantName: sensor.plant_name,
+              inPlantId: sensor.in_plant_id,
+              substrate: sensor.plant_soiltype
+            });
           }
-          return null;
-        })
-    );
-
-    const validConnectedSensors = connectedSensors.filter((sensor): sensor is NonNullable<typeof sensor> => sensor !== null);
+        }
+      }
+    }
 
     return {
       success: true,
       isExisting: true,
-      data: {
-        deviceSN: lcliteSN,
-        location: locationDetails,
-        connectedSensors: validConnectedSensors
-      } as ProcessedSensorData
+      deviceInfo: {
+        sn: validation.data.sn,
+        location: {
+          location_id: primarySensor.location_id,
+          location_name: primarySensor.in_location,
+          id: Number(primarySensor.location_id)
+        },
+        connectedSensors: validatedSensors
+      }
     };
 
   } catch (error) {
-    console.error('Error in validateAndProcessSensor:', error);
+    console.error('Validation error:', error);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      error: error instanceof Error ? error.message : 'Validation failed' 
     };
   }
+};
+
+export const setupDeviceState = (validationResult: ValidationResult) => {
+  if (!validationResult.success || !validationResult.deviceInfo) {
+    return false;
+  }
+
+  const { deviceInfo } = validationResult;
+
+  useDeviceStore.setState({
+    deviceSN: deviceInfo.sn,
+    selectedLocation: deviceInfo.location,
+    sensors: deviceInfo.connectedSensors.map(sensor => ({
+      sn: sensor.sn,
+      type: sensor.type,
+      plantName: sensor.plantName || undefined,
+      plantId: sensor.inPlantId || undefined,
+      substrate: sensor.substrate || undefined,
+      image: SENSOR_IMAGES[sensor.type],
+      measurements: [],
+      hasSubstrate: Boolean(sensor.substrate)
+    }))
+  });
+
+  return true;
 };
