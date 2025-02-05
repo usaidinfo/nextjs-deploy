@@ -317,7 +317,7 @@ function LocationPage() {
                 data={selectedPlantSensor.chartData}
                 title="Plant Data"
                 isLoading={isLoading}
-                currentDateRange={currentDateRange}
+                currentDateRange={displayDateRange}
                 sensorType={selectedPlantSensor.sensorData?.SensorType}
                 soilType={selectedPlantSensor.plantSoilType}
               />

@@ -1,4 +1,5 @@
 'use client';
+import { format } from 'date-fns';
 import React from 'react';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
@@ -57,10 +58,9 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   title, 
   sensorType = 8,
   soilType = '',
+  currentDateRange,
   isLoading = false,
 }) => {
-
-  console.log("chart data: ", data)
   
   const chartColors = {
     soilTemp: 'rgba(214,57,57,1)',
@@ -159,7 +159,7 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   };
 
   const formatChartData = () => {
-    return data.months.map((month, index) => ({
+    const formattedData = data.months.map((month, index) => ({
       time: month,
       poreEC: data.poreECData[index],
       bulkEC: data.bulkECData[index],
@@ -173,7 +173,20 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
       leafTemp: data.leafTempData?.[index],
       vwcSensor: data.vwcData[index]
     }));
+  
+    if (!currentDateRange) {
+      return formattedData;
+    }
+  
+    const startStr = format(currentDateRange.startDate, 'MMM dd HH:mm');
+    const endStr = format(currentDateRange.endDate, 'MMM dd HH:mm');
+  
+    return formattedData.filter(item => {
+      const timeStr = item.time;
+      return timeStr >= startStr && timeStr <= endStr;
+    });
   };
+  
 
   const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
@@ -206,7 +219,8 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   };
 
   const chartLines = getChartLines();
-  const hasData = data.months.length > 0;
+  const chartData = formatChartData();
+  const hasData = chartData.length > 0 && chartLines.length > 0;
 
   return (
     <div className="bg-[rgba(24,24,27,0.2)] rounded-2xl backdrop-blur-sm border border-zinc-700 p-4 w-full lg:w-3/5 xl:w-3/5">
