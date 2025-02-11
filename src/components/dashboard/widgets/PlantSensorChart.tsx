@@ -1,5 +1,4 @@
 'use client';
-import { format } from 'date-fns';
 import React from 'react';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
@@ -58,7 +57,6 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   title, 
   sensorType = 8,
   soilType = '',
-  currentDateRange,
   isLoading = false,
 }) => {
   
