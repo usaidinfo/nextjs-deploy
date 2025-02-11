@@ -1,3 +1,4 @@
+// src/app/dashboard/[locationId]/page.tsx
 'use client';
 import React, { useEffect, useState } from 'react';
 import { withAuth } from "lib/utils/auth";
@@ -64,11 +65,11 @@ function LocationPage() {
       };
     }
   
-    const sortedReadings = valuesResponse.sensorvalue.sort((a: { CreateDateTime: string | number | Date; }, b: { CreateDateTime: string | number | Date; }) => 
+    const allReadings = valuesResponse.sensorvalue.sort((a: { CreateDateTime: string | number | Date; }, b: { CreateDateTime: string | number | Date; }) => 
       new Date(b.CreateDateTime).getTime() - new Date(a.CreateDateTime).getTime()
     );
   
-    const validReadings = sortedReadings.filter((reading: { SENSORDATAJSON: string; }) => {
+    const validReadings = allReadings.filter((reading: { SENSORDATAJSON: string; }) => {
       const parsed = JSON.parse(reading.SENSORDATAJSON);
       return parsed.SensorType !== 255;
     });
@@ -77,25 +78,48 @@ function LocationPage() {
       throw new Error('No valid plant sensor data available');
     }
   
-    const readings = validReadings.map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
-      const parsed = JSON.parse(reading.SENSORDATAJSON);
-      return {
-        time: format(new Date(reading.CreateDateTime), 
-          isDateRangeSelected ? 'MMM dd HH:mm' : 'HH:mm'
-        ),
-        soilTemp: parsed.SoilTemp ?? 0,
-        bulkEC: parsed.BulkEC ?? 0,
-        vwcRock: parsed.VWCRock ?? 0,
-        vwc: parsed.VWC ?? 0,
-        vwcCoco: parsed.VWCCoco ?? 0,
-        poreEC: parsed.PoreEC ?? 0,
-        leafWetness: parsed.LeafWetness ?? 0,
-        leafTemp: parsed.LeafTemp ?? 0,
-        vwcChannel0Data: parsed.VWC_CHANNEL_0 ?? 0, 
-        vwcChannel1Data: parsed.VWC_CHANNEL_1 ?? 0
-      };
-    })
-    .reverse()
+    const mostRecentReading = validReadings[0];
+    const mostRecentTime = new Date(mostRecentReading.CreateDateTime);
+    const fourHoursBeforeMostRecent = new Date(mostRecentTime.getTime() - (4 * 60 * 60 * 1000));
+  
+    const filteredReadings = isDateRangeSelected
+      ? validReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
+          const readingTime = new Date(reading.CreateDateTime);
+          const rangeStartTime = new Date(startDate);
+          rangeStartTime.setHours(0, 0, 0, 0);
+          const rangeEndTime = new Date(endDate);
+          rangeEndTime.setHours(23, 59, 59, 999);
+          return readingTime >= rangeStartTime && readingTime <= rangeEndTime;
+        })
+      : validReadings.filter((reading: { CreateDateTime: string | number | Date; }) => {
+          const readingTime = new Date(reading.CreateDateTime);
+          return readingTime >= fourHoursBeforeMostRecent && readingTime <= mostRecentTime;
+        });
+  
+    if (filteredReadings.length === 0) {
+      throw new Error('No data available for selected time range');
+    }
+  
+    const readings = filteredReadings
+      .map((reading: { SENSORDATAJSON: string; CreateDateTime: string | number | Date; }) => {
+        const parsed = JSON.parse(reading.SENSORDATAJSON);
+        return {
+          time: format(new Date(reading.CreateDateTime),
+            isDateRangeSelected ? 'MMM dd HH:mm' : 'HH:mm'
+          ),
+          soilTemp: parsed.SoilTemp ?? 0,
+          bulkEC: parsed.BulkEC ?? 0,
+          vwcRock: parsed.VWCRock ?? 0,
+          vwc: parsed.VWC ?? 0,
+          vwcCoco: parsed.VWCCoco ?? 0,
+          poreEC: parsed.PoreEC ?? 0,
+          leafWetness: parsed.LeafWetness ?? 0,
+          leafTemp: parsed.LeafTemp ?? 0,
+          vwcChannel0Data: parsed.VWC_CHANNEL_0 ?? 0, 
+          vwcChannel1Data: parsed.VWC_CHANNEL_1 ?? 0
+        };
+      })
+      .sort((a: { time: string | number | Date; }, b: { time: string | number | Date; }) => new Date(a.time).getTime() - new Date(b.time).getTime())
 
   
     return {

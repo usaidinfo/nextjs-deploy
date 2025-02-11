@@ -159,7 +159,7 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   };
 
   const formatChartData = () => {
-    const formattedData = data.months.map((month, index) => ({
+    return data.months.map((month, index) => ({
       time: month,
       poreEC: data.poreECData[index],
       bulkEC: data.bulkECData[index],
@@ -173,18 +173,6 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
       leafTemp: data.leafTempData?.[index],
       vwcSensor: data.vwcData[index]
     }));
-  
-    if (!currentDateRange) {
-      return formattedData;
-    }
-  
-    const startStr = format(currentDateRange.startDate, 'MMM dd HH:mm');
-    const endStr = format(currentDateRange.endDate, 'MMM dd HH:mm');
-  
-    return formattedData.filter(item => {
-      const timeStr = item.time;
-      return timeStr >= startStr && timeStr <= endStr;
-    });
   };
   
 
