@@ -51,6 +51,7 @@ import { SensorValue } from "lib/types/sensor";
         } as MainReadingData;
       })
       .sort((a: { time: string | number | Date; }, b: { time: string | number | Date; }) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      .reverse()
       
     return {
       sensorData: JSON.parse(allReadings[0].SENSORDATAJSON),

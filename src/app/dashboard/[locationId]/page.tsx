@@ -120,6 +120,7 @@ function LocationPage() {
         };
       })
       .sort((a: { time: string | number | Date; }, b: { time: string | number | Date; }) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      .reverse()
 
   
     return {
