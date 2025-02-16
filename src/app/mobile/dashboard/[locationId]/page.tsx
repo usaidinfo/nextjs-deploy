@@ -30,7 +30,7 @@ export default function LocationDashboardPage() {
   const [displayDateRange, setDisplayDateRange] = useState({
     startDate: new Date(new Date().setHours(new Date().getHours() - 4)),
     endDate: new Date()
-  });    
+  });
 
   const fetchPlantSensorData = async (sensorSN: string, startDate: Date, endDate: Date, isDateRangeSelected: boolean = false) => {
     const valuesResponse = await sensorsService.getSensorValues(sensorSN, startDate, endDate);

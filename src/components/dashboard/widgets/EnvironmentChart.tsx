@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { DateRange } from 'react-date-range';
 import CalendarIcon from '@mui/icons-material/CalendarToday';
 import { format } from 'date-fns';
@@ -23,6 +23,15 @@ export interface ChartData {
   co2Data: number[];
 }
 
+interface MetricConfig {
+  name: string;
+  color: string;
+  unit: string;
+  active: boolean;
+  dataKey: keyof ChartData | string;
+  scale: number;
+}
+
 interface ChartWidgetProps {
   data: ChartData;
   title?: string | null;
@@ -36,15 +45,19 @@ interface ChartWidgetProps {
   lastSensorValueAt?: string;
 }
 
-interface ChartPayloadEntry {
-  name: 'temperature' | 'humidity' | 'vpd' | 'co2';
+interface TooltipPayload {
+  dataKey: string;
   value: number;
-  color: string;
+  stroke: string;
 }
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: ChartPayloadEntry[];
+  payload?: Array<{
+    dataKey: string;
+    value: number;
+    stroke: string;
+  }>;
   label?: string;
 }
 
@@ -80,11 +93,45 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const chartColors = {
-    temperature: 'rgba(239,68,68,1)',
-    humidity: 'rgba(34,197,94,1)',
-    vpd: 'rgba(59,130,246,1)',
-    co2: 'rgba(234,179,8,1)'
+  const [metrics, setMetrics] = useState<MetricConfig[]>([
+    {
+      name: 'Temperature',
+      color: 'rgba(239,68,68,1)',
+      unit: '°C',
+      active: true,
+      dataKey: 'temperature',
+      scale: 1
+    },
+    {
+      name: 'Humidity',
+      color: 'rgba(34,197,94,1)',
+      unit: '%',
+      active: true,
+      dataKey: 'humidity',
+      scale: 1
+    },
+    {
+      name: 'VPD',
+      color: 'rgba(59,130,246,1)',
+      unit: 'kPa',
+      active: true,
+      dataKey: 'vpd',
+      scale: 1
+    },
+    {
+      name: 'CO₂',
+      color: 'rgba(234,179,8,1)',
+      unit: 'ppm',
+      active: true,
+      dataKey: 'co2',
+      scale: 0.1
+    }
+  ]);
+  
+  const toggleMetric = (index: number) => {
+    setMetrics(prev => prev.map((metric, i) => 
+      i === index ? { ...metric, active: !metric.active } : metric
+    ));
   };
 
   const hasData = data.months.length > 0 && data.tempData.length > 0;
@@ -119,15 +166,28 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
     }
   }, [currentDateRange, onDateRangeChange]);
 
-  const formatChartData = () => {
+  // const formatChartData = () => {
+  //   if (!data || !data.months) return [];
+  //   return data.months.map((month, index) => ({
+  //     time: month,
+  //     temperature: data.tempData[index],
+  //     humidity: data.humidityData[index],
+  //     vpd: data.vpdData[index],
+  //     co2: data.co2Data[index]
+  //   }));
+  // };
+
+  const formattedChartData = useMemo(() => {
+    if (!data || !data.months) return [];
+    
     return data.months.map((month, index) => ({
       time: month,
-      temperature: data.tempData[index],
-      humidity: data.humidityData[index],
-      vpd: data.vpdData[index],
-      co2: data.co2Data[index]
+      temperature: data.tempData?.[index] ?? 0,
+      humidity: data.humidityData?.[index] ?? 0,
+      vpd: data.vpdData?.[index] ?? 0,
+      co2: data.co2Data?.[index] ?? 0
     }));
-  };
+  }, [data])
 
   const isDateRangeValid = (startDate: Date, endDate: Date) => {
     if (!firstSensorValueAt || !lastSensorValueAt) return true;
@@ -195,29 +255,21 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
       return (
         <div className="bg-zinc-900/90 border border-zinc-700 rounded-lg p-2">
           <p className="text-white text-sm font-medium mb-1">{label}</p>
-          {payload.map((entry: ChartPayloadEntry) => (
-            <div key={entry.name} className="flex justify-between text-sm gap-4">
-              <span style={{ color: entry.color }}>
-                {entry.name === 'temperature'
-                  ? 'Temperature'
-                  : entry.name === 'humidity'
-                  ? 'Humidity'
-                  : entry.name === 'vpd'
-                  ? 'VPD'
-                  : 'CO2'}:
-              </span>
-              <span style={{ color: entry.color }}>
-                {entry.value.toFixed(1)}
-                {entry.name === 'temperature'
-                  ? '°C'
-                  : entry.name === 'humidity'
-                  ? '%'
-                  : entry.name === 'vpd'
-                  ? 'kPa'
-                  : 'ppm'}
-              </span>
-            </div>
-          ))}
+          {payload.map((entry: TooltipPayload) => {
+            const metric = metrics.find(m => m.dataKey === entry.dataKey);
+            if (!metric || !metric.active) return null;
+            
+            return (
+              <div key={metric.dataKey} className="flex justify-between text-sm gap-4">
+                <span style={{ color: metric.color }}>
+                  {metric.name}:
+                </span>
+                <span style={{ color: metric.color }}>
+                  {(entry.value / metric.scale).toFixed(1)} {metric.unit}
+                </span>
+              </div>
+            );
+          })}
         </div>
       );
     }
@@ -253,6 +305,23 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
             {format(dateRange[0].startDate, 'MMM dd, yyyy HH:mm')} -{' '}
             {format(dateRange[0].endDate, 'MMM dd, yyyy HH:mm')}
           </p>
+        </div>
+        <div className="flex items-center gap-4 ml-2 mr-1 overflow-x-auto hide-scrollbar">
+          {metrics.map((metric, index) => (
+            <button
+              key={metric.name}
+              onClick={() => toggleMetric(index)}
+              aria-label={`Toggle ${metric.name} visibility`}
+              className="flex items-center gap-2 transition-opacity"
+              style={{ opacity: metric.active ? 1 : 0.3 }}
+            >
+              <span
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: metric.color }}
+              />
+              <span className="text-xs text-white">{metric.name}</span>
+            </button>
+          ))}
         </div>
         <div className="relative">
           <CalendarIcon
@@ -312,61 +381,43 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart
-            data={formatChartData()}
-            margin={{ left: -20, right: 30, top: 20, bottom: 10 }}
-          >
-            <XAxis
-              dataKey="time"
-              stroke="#FFFFFF"
-              tick={{ fill: 'white', fontSize: 10 }}
-              tickLine={false}
-              axisLine={false}
-              dy={10}
-            />
-            <YAxis
-              stroke="#FFFFFF"
-              tick={{ fill: 'white', fontSize: 13 }}
-              tickLine={false}
-              axisLine={false}
-              dx={-10}
-            />
-            <CartesianGrid
-              horizontal={true}
-              vertical={false}
-              strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.5)"
-            />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
-            <Line
-              type="monotoneX"
-              dataKey="temperature"
-              stroke={chartColors.temperature}
-              dot={false}
-              strokeWidth={2}
-            />
-            <Line
-              type="monotoneX"
-              dataKey="humidity"
-              stroke={chartColors.humidity}
-              dot={false}
-              strokeWidth={2}
-            />
-            <Line
-              type="monotoneX"
-              dataKey="vpd"
-              stroke={chartColors.vpd}
-              dot={false}
-              strokeWidth={2}
-            />
-            <Line
-              type="monotoneX"
-              dataKey="co2"
-              stroke={chartColors.co2}
-              dot={false}
-              strokeWidth={2}
-            />
-          </LineChart>
+              <LineChart
+                data={formattedChartData}
+                margin={{ left: -20, right: 30, top: 20, bottom: 10 }}
+              >
+                <XAxis
+                  dataKey="time"
+                  stroke="#FFFFFF"
+                  tick={{ fill: 'white', fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={10}
+                />
+                <YAxis
+                  stroke="#FFFFFF"
+                  tick={{ fill: 'white', fontSize: 13 }}
+                  tickLine={false}
+                  axisLine={false}
+                  dx={-10}
+                />
+                <CartesianGrid
+                  horizontal={true}
+                  vertical={false}
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.5)"
+                />
+                <Tooltip content={<CustomTooltip />} cursor={false} />
+                {metrics.map(metric => metric.active && (
+                  <Line
+                    key={metric.dataKey}
+                    type="monotoneX"
+                    dataKey={metric.dataKey}
+                    stroke={metric.color}
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                ))}
+              </LineChart>
         </ResponsiveContainer>
       )}
     </div>
