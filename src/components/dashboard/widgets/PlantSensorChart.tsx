@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { 
@@ -46,6 +46,15 @@ interface ChartPayloadEntry {
   dataKey: string;
 }
 
+interface MetricConfig {
+  name: string;
+  color: string;
+  unit: string;
+  active: boolean;
+  dataKey: string;
+  scale: number;
+}
+
 interface CustomTooltipProps {
   active?: boolean;
   payload?: ChartPayloadEntry[];
@@ -59,6 +68,62 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
   soilType = '',
   isLoading = false,
 }) => {
+  const [metrics, setMetrics] = useState<MetricConfig[]>(() => {
+    const getInitialMetrics = () => {
+      if (sensorType === 8) {
+        switch(soilType?.toLowerCase()) {
+          case 'soil':
+            return [
+              { name: 'Pore EC', color: 'rgba(107,47,209,1)', unit: 'mS/cm', active: true, dataKey: 'poreEC', scale: 1 },
+              { name: 'VWC', color: 'rgba(21,128,61,1)', unit: '%', active: true, dataKey: 'vwc', scale: 1 },
+              { name: 'Soil Temp', color: 'rgba(214,57,57,1)', unit: '°C', active: true, dataKey: 'soilTemp', scale: 1 }
+            ];
+          case 'coconut':
+            return [
+              { name: 'Bulk EC', color: 'rgba(107,47,209,1)', unit: 'mS/cm', active: true, dataKey: 'bulkEC', scale: 1 },
+              { name: 'VWC Coco', color: 'rgba(21,128,61,1)', unit: '%', active: true, dataKey: 'vwcCoco', scale: 1 },
+              { name: 'Soil Temp', color: 'rgba(214,57,57,1)', unit: '°C', active: true, dataKey: 'soilTemp', scale: 1 }
+            ];
+          case 'stone':
+            return [
+              { name: 'Bulk EC', color: 'rgba(107,47,209,1)', unit: 'mS/cm', active: true, dataKey: 'bulkEC', scale: 1 },
+              { name: 'VWC Rock', color: 'rgba(21,128,61,1)', unit: '%', active: true, dataKey: 'vwcRock', scale: 1 },
+              { name: 'Soil Temp', color: 'rgba(214,57,57,1)', unit: '°C', active: true, dataKey: 'soilTemp', scale: 1 }
+            ];
+          default:
+            return [];
+        }
+      }
+      
+      if (sensorType === 15) {
+        return [
+          { name: 'Leaf Wetness', color: 'rgba(107,47,209,1)', unit: '', active: true, dataKey: 'leafWetness', scale: 1 },
+          { name: 'Leaf Temp', color: 'rgba(21,128,61,1)', unit: '°C', active: true, dataKey: 'leafTemp', scale: 1 }
+        ];
+      }
+  
+      if (sensorType === 17) {
+        const metrics = [];
+        if (data.vwcChannel0Data?.some(val => val !== undefined && val !== null)) {
+          metrics.push({ name: 'VWC 1', color: 'rgba(21,128,61,1)', unit: '%', active: true, dataKey: 'vwcChannel0Data', scale: 1 });
+        }
+        if (data.vwcChannel1Data?.some(val => val !== undefined && val !== null)) {
+          metrics.push({ name: 'VWC 2', color: 'rgba(107,47,209,1)', unit: '%', active: true, dataKey: 'vwcChannel1Data', scale: 1 });
+        }
+        return metrics;
+      }
+  
+      return [];
+    };
+  
+    return getInitialMetrics();
+  });
+  
+  const toggleMetric = (index: number) => {
+    setMetrics((prev: MetricConfig[]) => prev.map((metric, i) => 
+      i === index ? { ...metric, active: !metric.active } : metric
+    ));
+  };
   
   const chartColors = {
     soilTemp: 'rgba(214,57,57,1)',
@@ -214,6 +279,20 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
         <div>
           <h2 className="text-xl font-semibold text-white">{title || 'Plant Sensor Data'}</h2>
         </div>
+        <div className="flex items-center gap-4 ml-4 overflow-x-auto hide-scrollbar">
+    {metrics.map((metric, index) => (
+      <button
+        key={metric.name}
+        onClick={() => toggleMetric(index)}
+        aria-label={`Toggle ${metric.name} visibility`}
+        className="flex items-center gap-2 transition-opacity"
+        style={{ opacity: metric.active ? 1 : 0.3 }}
+      >
+        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: metric.color }} />
+        <span className="text-xs text-white">{metric.name}</span>
+      </button>
+    ))}
+  </div>
       </div>
       
       {isLoading ? (
@@ -255,16 +334,16 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
               content={<CustomTooltip />}
               cursor={false}
             />
-            {chartLines.map(line => (
-              <Line
-                key={line.key}
-                type="monotoneX"
-                dataKey={line.key}
-                stroke={line.color}
-                dot={false}
-                strokeWidth={2}
-              />
-            ))}
+  {metrics.map(metric => metric.active && (
+    <Line
+      key={metric.dataKey}
+      type="monotoneX"
+      dataKey={metric.dataKey}
+      stroke={metric.color}
+      dot={false}
+      strokeWidth={2}
+    />
+  ))}
           </LineChart>
         </ResponsiveContainer>
       )}
