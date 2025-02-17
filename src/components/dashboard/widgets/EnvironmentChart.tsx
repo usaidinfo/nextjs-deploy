@@ -189,6 +189,33 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
     }));
   }, [data])
 
+  const handleQuickRangeSelect = (days: number) => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - days);
+    
+    const isValid = isDateRangeValid(startDate, endDate);
+    if (!isValid) {
+      setIsOutOfRange(true);
+      return;
+    }
+  
+    setDateRange([
+      {
+        startDate,
+        endDate,
+        key: 'selection'
+      }
+    ]);
+    
+    setShowDatePicker(false);
+    
+    if (onDateRangeChange) {
+      endDate.setHours(23, 59, 59, 999);
+      onDateRangeChange(startDate, endDate);
+    }
+  };
+
   const isDateRangeValid = (startDate: Date, endDate: Date) => {
     if (!firstSensorValueAt || !lastSensorValueAt) return true;
     
@@ -331,6 +358,40 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
           {showDatePicker && (
             <div className={isMobile ? 'fixed inset-0 flex items-center justify-center bg-black/50' : 'absolute right-0'} style={{ zIndex: 50 }}>
               <div className={`${datePickerCustomStyles.wrapper} ${isMobile ? 'w-[80vw] max-w-md mx-auto overflow-hidden' : ''}`}>
+                <div className="flex flex-wrap gap-1.5 p-3 border-b border-zinc-700/50 bg-zinc-900/50">
+                  <button
+                    onClick={() => handleQuickRangeSelect(0.2)}
+                    className="flex-1 px-2 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800/50 
+                 border border-zinc-700/50 rounded-lg hover:bg-zinc-800 hover:text-white 
+                 transition-all duration-200"
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() => handleQuickRangeSelect(1)}
+                    className="flex-1 px-2 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800/50 
+                 border border-zinc-700/50 rounded-lg hover:bg-zinc-800 hover:text-white 
+                 transition-all duration-200"
+                  >
+                    Yesterday
+                  </button>
+                  <button
+                    onClick={() => handleQuickRangeSelect(7)}
+                    className="flex-1 px-2 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800/50 
+                 border border-zinc-700/50 rounded-lg hover:bg-zinc-800 hover:text-white 
+                 transition-all duration-200"
+                  >
+                    Last 7 Days
+                  </button>
+                  <button
+                    onClick={() => handleQuickRangeSelect(30)}
+                    className="flex-1 px-2 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800/50 
+                 border border-zinc-700/50 rounded-lg hover:bg-zinc-800 hover:text-white 
+                 transition-all duration-200"
+                  >
+                    Last 30 Days
+                  </button>
+                </div>
                 <DateRange
                   ranges={isMobile ? tempDateRange : dateRange}
                   onChange={handleDateRangeChange}
