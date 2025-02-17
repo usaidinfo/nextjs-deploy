@@ -1,10 +1,13 @@
 // src/lib/constants/settings-options.ts
 export interface SettingsOption {
-    id: string;
-    label: string;
-    iconType: 'delete' | 'password' | 'email' | 'username';
-    modalType: 'deleteSensor' | 'deleteLocation' | 'deletePlant' | 'changePassword' | 'changeEmail' | 'changeUsername';
-  }
+  id: string;
+  label: string;
+  iconType: 'delete' | 'password' | 'email' | 'username';
+  modalType: 'deleteSensor' | 'deleteLocation' | 'deletePlant' | 'changePassword' | 
+             'changeEmail' | 'changeUsername' | 'deleteAccount' | 'deleteAddonSensor';
+}
+
+
   
   export const getSettingsOptions = (hasActiveSensor: boolean, hasActivePlant: boolean, hasActiveLocation: boolean): SettingsOption[] => {
     const options: SettingsOption[] = [
@@ -26,6 +29,12 @@ export interface SettingsOption {
             iconType: 'username',
             modalType: 'changeUsername'
           },
+          {
+              id: 'deleteAccount',
+              label: 'Delete Account',
+              iconType: 'delete',
+              modalType: 'deleteAccount'
+          }
     ];
 
     if (hasActiveLocation) {
@@ -54,6 +63,16 @@ export interface SettingsOption {
         modalType: 'deleteSensor'
       });
     }
+
+    if (hasActiveSensor) {
+      options.unshift({
+          id: 'deleteAddonSensor',
+          label: 'Delete Addon Sensor',
+          iconType: 'delete',
+          modalType: 'deleteAddonSensor'
+      });
+  }
+    
   
     return options;
   };

@@ -15,6 +15,8 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangeUsernameModal from '../modals/ChangeUsernameModal';
+import DeleteAccountModal from '../modals/DeleteAccountModal';
+import DeleteAddonSensorModal from '../modals/DeleteAddonSensorModal';
 
 const getIcon = (iconType: string) => {
   switch (iconType) {
@@ -37,16 +39,17 @@ interface SettingsOverlayProps {
 }
 
 const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ anchorEl, onClose }) => {
-  const [selectedModal, setSelectedModal] = useState<'deleteSensor' | 'deleteLocation' | 'deletePlant' | 'changePassword' | 'changeEmail' | 'changeUsername' | null>(null);
+  const [selectedModal, setSelectedModal] = useState<'deleteSensor' | 'deleteLocation' | 'deletePlant' | 'changePassword' | 'changeEmail' | 'changeUsername' | 'deleteAccount' | 'deleteAddonSensor' | null>(null);
   const activeSensor = useDeviceStore(state => state.activeSensor);
   const activePlantId = useDeviceStore(state => state.activePlantId);
   const resetActiveItems = useDeviceStore(state => state.resetActiveItems);
   const params  = useParams();
   const locationId = typeof params?.locationId === 'string' ? params.locationId : '';
+  const addonSensorSN = useDeviceStore(state => state.addonSensorSN);
 
   const options = getSettingsOptions(!!activeSensor, !!activePlantId, !!locationId);
 
-  const handleOptionClick = (modalType: 'deleteSensor' | 'deleteLocation' | 'deletePlant' | 'changePassword' | 'changeEmail' | 'changeUsername') => {
+  const handleOptionClick = (modalType: 'deleteSensor' | 'deleteLocation' | 'deletePlant' | 'changePassword' | 'changeEmail' | 'changeUsername' |  "deleteAccount" | 'deleteAddonSensor') => {
     setSelectedModal(modalType);
     onClose();
   };
@@ -125,6 +128,22 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ anchorEl, onClose }) 
         <ChangeUsernameModal
           isOpen={true}
           onClose={() => setSelectedModal(null)}
+        />
+      )}
+
+      {selectedModal === 'deleteAccount' && (
+        <DeleteAccountModal
+          isOpen={true}
+          onClose={() => setSelectedModal(null)}
+        />
+      )}
+
+      {selectedModal === 'deleteAddonSensor' && activeSensor && addonSensorSN && (
+        <DeleteAddonSensorModal
+          isOpen={true}
+          onClose={() => setSelectedModal(null)}
+          sn={activeSensor}
+          addonSensorSN={addonSensorSN}
         />
       )}
     </>

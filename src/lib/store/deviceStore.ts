@@ -44,6 +44,8 @@ interface DeviceState {
   activeLocationId: string | null;
   activeLocationName: string | null;
   setActiveLocation: (id: string, name: string) => void;
+  addonSensorSN: string | null;
+  setAddonSensorSN: (sn: string) => void;
 }
 
 export const useDeviceStore = create<DeviceState>((set) => ({
@@ -91,4 +93,6 @@ export const useDeviceStore = create<DeviceState>((set) => ({
     activeLocationId: id,
     activeLocationName: name 
   }),
+  addonSensorSN: null,
+  setAddonSensorSN: (sn) => set({ addonSensorSN: sn }),
 }));
