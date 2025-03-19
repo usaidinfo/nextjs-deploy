@@ -81,12 +81,14 @@ const PlantSensorChart: React.FC<PlantSensorChartProps> = ({
           case 'coconut':
             return [
               { name: 'Bulk EC', color: 'rgba(107,47,209,1)', unit: 'mS/cm', active: true, dataKey: 'bulkEC', scale: 1 },
+              { name: 'Pore EC', color: 'rgba(59,130,246,1)', unit: 'mS/cm', active: true, dataKey: 'poreEC', scale: 1 },
               { name: 'VWC Coco', color: 'rgba(21,128,61,1)', unit: '%', active: true, dataKey: 'vwcCoco', scale: 1 },
               { name: 'Soil Temp', color: 'rgba(214,57,57,1)', unit: '°C', active: true, dataKey: 'soilTemp', scale: 1 }
             ];
           case 'stone':
             return [
               { name: 'Bulk EC', color: 'rgba(107,47,209,1)', unit: 'mS/cm', active: true, dataKey: 'bulkEC', scale: 1 },
+              { name: 'Pore EC', color: 'rgba(59,130,246,1)', unit: 'mS/cm', active: true, dataKey: 'poreEC', scale: 1 },
               { name: 'VWC Rock', color: 'rgba(21,128,61,1)', unit: '%', active: true, dataKey: 'vwcRock', scale: 1 },
               { name: 'Soil Temp', color: 'rgba(214,57,57,1)', unit: '°C', active: true, dataKey: 'soilTemp', scale: 1 }
             ];

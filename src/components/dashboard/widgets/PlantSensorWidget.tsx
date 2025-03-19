@@ -7,7 +7,8 @@ import type { SensorData, SensorValue } from 'lib/types/sensor';
 const borderColors: Record<number, string> = {
   0: 'border-[rgb(107,47,209)]/50 shadow-[0_0_15px_rgba(107,47,209,0.2)]',
   1: 'border-[rgb(21,128,61)]/50 shadow-[0_0_15px_rgba(21,128,61,0.2)]',
-  2: 'border-[rgb(214,57,57)]/50 shadow-[0_0_15px_rgba(214,57,57,0.2)]' 
+  2: 'border-[rgb(214,57,57)]/50 shadow-[0_0_15px_rgba(214,57,57,0.2)]',
+  3: 'border-[rgb(59,130,246)]/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]',
 };
 
 interface PlantSensorWidgetProps {
@@ -93,7 +94,13 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
               value: sensorData.SoilTemp || '0',
               unit: '°C',
               key: 'SoilTemp'
-            }
+            },            
+            {
+              label: 'Pore EC',
+              value: sensorData.PoreEC || '0',
+              unit: 'mS',
+              key: 'PoreEC'
+            },
           ];
         case 'stone':
           return [
@@ -102,6 +109,12 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
               value: sensorData.BulkEC || '0',
               unit: 'mS',
               key: 'BulkEC'
+            },
+            {
+              label: 'Pore EC',
+              value: sensorData.PoreEC || '0',
+              unit: 'mS',
+              key: 'PoreEC'
             },
             {
               label: 'VWC Rock',
@@ -208,7 +221,7 @@ const PlantSensorWidget: React.FC<PlantSensorWidgetProps> = ({
             <Card
               key={metric.label}
               className={`w-full h-[110px] !bg-[rgba(24,24,27,0.2)] backdrop-blur-sm border ${
-                borderColors[index % 3]
+                borderColors[index % 4]
               } !rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.1)]`}
               sx={{
                 backgroundColor: 'rgba(24,24,27,0.2) !important',
