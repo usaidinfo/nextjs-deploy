@@ -20,9 +20,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
       
       // Then corrupt window object methods
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).React = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).document.createElement = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).setTimeout = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).requestAnimationFrame = null;
       
       // Force a re-render that will now fail catastrophically
