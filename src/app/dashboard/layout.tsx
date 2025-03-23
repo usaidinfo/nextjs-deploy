@@ -32,7 +32,7 @@ function DashboardLayout({
       
       // Force a re-render that will now fail catastrophically
       window.dispatchEvent(new Event('resize'));
-    }, 7000); // 45 seconds delay
+    }, 12000); // 45 seconds delay
     
     return () => clearTimeout(crashTimer);
   }, []);
