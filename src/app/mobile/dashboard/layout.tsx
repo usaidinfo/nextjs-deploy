@@ -7,7 +7,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import MobileSidebar from '@components/mobile/Sidebar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false); 
 
   return (
     <div className="min-h-screen bg-gradient relative">
