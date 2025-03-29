@@ -1,5 +1,5 @@
 'use client';
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense } from 'react';
 import Navbar from "@components/dashboard/Header";
 import Sidebar from "@components/dashboard/Sidebar";
 import 'app/globals.css';
