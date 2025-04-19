@@ -102,7 +102,7 @@ export default function LoginForm() {
     setError("");
   };
 
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+const handleSubmit = async () => {
   if (isLoading) return;
   setError('');
   setIsLoading(true);
