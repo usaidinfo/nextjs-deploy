@@ -4,7 +4,6 @@ import '../../globals.css';
 import Image from 'next/image';
 
 
-
 function SignUpPage() {
   return (
     <div className='grid md:grid-cols-2 grid-cols-1 min-h-screen overflow-hidden'>
