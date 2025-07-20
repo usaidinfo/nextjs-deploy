@@ -1,4 +1,4 @@
-import { format, subHours, subDays } from "date-fns";
+import { subHours } from "date-fns";
 import { SENSOR_MEASUREMENTS, SENSOR_PRODUCT_TYPES, SENSOR_SUBSTRATE_REQUIRED } from "lib/constants/sensor-types";
 import { QRValidationResponse, SNInfoResponse, Sensor, SensorValue } from "lib/types/sensor";
 
@@ -152,7 +152,7 @@ AirCO2: Math.round(400 + Math.random() * 200),
     }
   }
 
-  async getSensorValues(sn: string, startDate?: Date, endDate?: Date, locationId?: string) {
+async getSensorValues(sn: string, startDate?: Date, endDate?: Date, _locationId?: string) {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -232,7 +232,7 @@ AirCO2: Math.round(400 + Math.random() * 200),
     }
   }
   
-  async addAddonSensor(data: { sn: string; addonsensorsn: string }) {
+async addAddonSensor(_data: { sn: string; addonsensorsn: string }) {
     try {
       const token = localStorage.getItem('token');
       if (!token) {

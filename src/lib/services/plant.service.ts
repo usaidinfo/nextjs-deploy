@@ -114,7 +114,7 @@ class PlantService {
     }
   }
 
-  async createPlant(locationId: number, plantName: string, soilType: string) {
+async createPlant(locationId: number, plantName: string, _soilType: string) {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
