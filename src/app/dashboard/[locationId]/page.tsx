@@ -6,7 +6,6 @@ import EnvironmentWidget from "@components/dashboard/widgets/EnvironmentWidget";
 import ChartWidget from "@components/dashboard/widgets/EnvironmentChart";
 import { sensorsService } from 'lib/services/sensor.service';
 import type { MainSensorWithData, PlantSensorWithData } from 'lib/types/sensor';
-import type { PlantReadingData } from 'lib/types/environment';
 import { useParams } from 'next/navigation';
 import { EnvironmentWidgetSkeleton } from '@components/dashboard/skeletons/EnvironmentWidgetSkeleton';
 import { ChartWidgetSkeleton } from '@components/dashboard/skeletons/ChartWidgetSkeleton';
@@ -125,19 +124,19 @@ function LocationPage() {
   
     return {
       sensorData: JSON.parse(validReadings[0].SENSORDATAJSON),
-      chartData: {
-        months: readings.map((r: { time: PlantReadingData; }) => r.time),
-        soilTempData: readings.map((r: { soilTemp: PlantReadingData; }) => Number(r.soilTemp) || 0),
-        bulkECData: readings.map((r: { bulkEC: PlantReadingData; }) => Number(r.bulkEC) || 0),
-        vwcRockData: readings.map((r: { vwcRock: PlantReadingData; }) => Number(r.vwcRock) || 0),
-        vwcData: readings.map((r: { vwc: PlantReadingData; }) => Number(r.vwc) || 0),
-        vwcCocoData: readings.map((r: { vwcCoco: PlantReadingData; }) => Number(r.vwcCoco) || 0),
-        poreECData: readings.map((r: { poreEC: PlantReadingData; }) => Number(r.poreEC) || 0),
-        leafWetnessData: readings.map((r: { leafWetness: PlantReadingData; }) => Number(r.leafWetness) || 0),
-        leafTempData: readings.map((r: { leafTemp: PlantReadingData; }) => Number(r.leafTemp) || 0),
-        vwcChannel0Data: readings.map((r: { vwcChannel0Data: PlantReadingData }) => Number(r.vwcChannel0Data) || 0),
-        vwcChannel1Data: readings.map((r: { vwcChannel1Data: PlantReadingData }) => Number(r.vwcChannel1Data) || 0)
-      },
+chartData: {
+  months: readings.map(r => r.time),
+  soilTempData: readings.map(r => Number(r.soilTemp) || 0),
+  bulkECData: readings.map(r => Number(r.bulkEC) || 0),
+  vwcRockData: readings.map(r => Number(r.vwcRock) || 0),
+  vwcData: readings.map(r => Number(r.vwc) || 0),
+  vwcCocoData: readings.map(r => Number(r.vwcCoco) || 0),
+  poreECData: readings.map(r => Number(r.poreEC) || 0),
+  leafWetnessData: readings.map(r => Number(r.leafWetness) || 0),
+  leafTempData: readings.map(r => Number(r.leafTemp) || 0),
+  vwcChannel0Data: readings.map(r => Number(r.vwcChannel0Data) || 0),
+  vwcChannel1Data: readings.map(r => Number(r.vwcChannel1Data) || 0)
+},
       historicalData: validReadings
     };
   };
@@ -176,10 +175,14 @@ function LocationPage() {
       
       try {
         const sensorsResponse = await sensorsService.getSensors();
-        
-        const plantSensor = sensorsResponse.sensor.find(
-          (          sensor: { in_plant_id: string; plant_name: string; }) => sensor.in_plant_id === plantId && sensor.plant_name === plantName
-        );
+        if (!sensorsResponse.success || !sensorsResponse.sensor) {
+  setSelectedPlantSensor(null);
+  return;
+}
+
+const plantSensor = sensorsResponse.sensor.find(
+  sensor => sensor.in_plant_id === plantId && sensor.plant_name === plantName   
+);
   
         if (!plantSensor) {
           setSelectedPlantSensor(null);
@@ -188,6 +191,7 @@ function LocationPage() {
   
         const baseSensorSN = plantSensor.sn;
   
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const allSensorEntries = sensorsResponse.sensor.filter(
           (          sensor: { sn: string; }) => sensor.sn === baseSensorSN
         );
@@ -205,16 +209,20 @@ function LocationPage() {
           VWC_CHANNEL_1: null
         };
   
-        const modifiedChartData = {
-          ...sensorData.chartData,
-          vwcChannel0Data: [],
-          vwcChannel1Data: []
-        };
-  
-        allSensorEntries.forEach((entry: { in_plant_id: string; sn_addonsensor_info: string; }) => {
+const modifiedChartData = {
+  ...sensorData.chartData,
+  vwcChannel0Data: [] as number[],
+  vwcChannel1Data: [] as number[]
+};
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+allSensorEntries.forEach((entry) => {
           if (entry.in_plant_id === plantId) {
-            const sensorInfo = entry.sn_addonsensor_info ? JSON.parse(entry.sn_addonsensor_info) : null;
-            const channelField = sensorInfo?.SENSOR_VALUE_FIELD;
+const sensorInfo = entry.sn_addonsensor_info ? 
+  (typeof entry.sn_addonsensor_info === 'string' ? 
+    JSON.parse(entry.sn_addonsensor_info) : 
+    entry.sn_addonsensor_info) : null;
+                const channelField = sensorInfo?.SENSOR_VALUE_FIELD;
   
             if (channelField === 'VWC_CHANNEL_0') {
               modifiedSensorData.VWC_CHANNEL_0 = sensorData.sensorData?.VWC_CHANNEL_0;
@@ -227,13 +235,14 @@ function LocationPage() {
           }
         });
   
-        setSelectedPlantSensor({
-          sensor: plantSensor,
-          sensorData: modifiedSensorData,
-          chartData: modifiedChartData,
-          historicalData: sensorData.historicalData,
-          plantSoilType: plantSensor.plant_soiltype
-        });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+setSelectedPlantSensor({
+  sensor: plantSensor,
+  sensorData: modifiedSensorData,
+  chartData: modifiedChartData,
+  historicalData: sensorData.historicalData,
+  plantSoilType: plantSensor.plant_soiltype || undefined
+});
   
       } catch (error) {
         console.error('Error fetching plant sensor:', error);
@@ -259,11 +268,13 @@ function LocationPage() {
         endDate,
         true
       );
-      
-      setMainSensor(prev => prev ? {
-        ...prev,
-        ...mainSensorData
-      } : null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+setMainSensor(prev => prev ? {
+  ...prev,
+  sensorData: mainSensorData.sensorData,
+  chartData: mainSensorData.chartData,
+  historicalData: mainSensorData.historicalData
+} : null);
   
       if (selectedPlantSensor) {
         const plantSensorData = await fetchPlantSensorData(

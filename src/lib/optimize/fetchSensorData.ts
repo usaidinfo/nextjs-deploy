@@ -56,11 +56,11 @@ import { SensorValue } from "lib/types/sensor";
     return {
       sensorData: JSON.parse(allReadings[0].SENSORDATAJSON),
       chartData: {
-        months: readings.map((r: { time: MainReadingData; }) => r.time),
-        tempData: readings.map((r: { temp: MainReadingData; }) => r.temp),
-        humidityData: readings.map((r: { humidity: MainReadingData; }) => r.humidity),
-        vpdData: readings.map((r: { vpd: MainReadingData; }) => r.vpd),
-        co2Data: readings.map((r: { co2: MainReadingData; }) => r.co2)
+months: readings.map(r => r.time),
+        tempData: readings.map(r => r.temp),
+        humidityData: readings.map(r => r.humidity),
+        vpdData: readings.map(r => r.vpd),
+        co2Data: readings.map(r => r.co2)
       },
       historicalData: allReadings
     };

@@ -76,9 +76,9 @@ const Sidebar = () => {
         sensorsService.getSensors()
       ]);
   
-      const locationSensors = sensorsResponse.success ? 
-        sensorsResponse.sensor.filter((sensor: { location_id: string; }) => sensor.location_id === locationId) : 
-        [];
+const locationSensors = sensorsResponse.success && sensorsResponse.sensor ? 
+  sensorsResponse.sensor.filter((sensor: { location_id: string; }) => sensor.location_id === locationId) : 
+  [];
   
       if (plantsResponse.success && plantsResponse.plants) {
         const locationPlants = plantsResponse.plants.filter(

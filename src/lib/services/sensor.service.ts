@@ -22,7 +22,7 @@ class SensorsService {
       plant_name: 'Tomato Cherry',
       plant_soiltype: 'soil',
       sn_addonsensor: 'AS001234',
-      sn_addonsensor_info: JSON.stringify({ SENSOR_VALUE_FIELD: 'VWC_CHANNEL_0' }),
+sn_addonsensor_info: { SENSOR_VALUE_FIELD: 'VWC_CHANNEL_0' },
       firstSensorValueAt: '2024-01-01T00:00:00Z',
       lastSensorValueAt: new Date().toISOString()
     },
@@ -35,7 +35,7 @@ class SensorsService {
       plant_name: 'Lettuce Romaine',
       plant_soiltype: 'coconut',
       sn_addonsensor: 'AS001235',
-      sn_addonsensor_info: JSON.stringify({ SENSOR_VALUE_FIELD: 'VWC_CHANNEL_1' }),
+sn_addonsensor_info: { SENSOR_VALUE_FIELD: 'VWC_CHANNEL_0' },
       firstSensorValueAt: '2024-01-01T00:00:00Z',
       lastSensorValueAt: new Date().toISOString()
     },
@@ -48,7 +48,7 @@ class SensorsService {
       plant_name: 'Cucumber English',
       plant_soiltype: 'stone',
       sn_addonsensor: 'AS001236',
-      sn_addonsensor_info: JSON.stringify({ SENSOR_VALUE_FIELD: 'VWC_CHANNEL_0' }),
+sn_addonsensor_info: { SENSOR_VALUE_FIELD: 'VWC_CHANNEL_0' },
       firstSensorValueAt: '2024-01-01T00:00:00Z',
       lastSensorValueAt: new Date().toISOString()
     },
@@ -61,7 +61,7 @@ class SensorsService {
       plant_name: 'Mint Fresh',
       plant_soiltype: 'soil',
       sn_addonsensor: 'AS001237',
-      sn_addonsensor_info: JSON.stringify({ SENSOR_VALUE_FIELD: 'VWC_CHANNEL_1' }),
+sn_addonsensor_info: { SENSOR_VALUE_FIELD: 'VWC_CHANNEL_0' },
       firstSensorValueAt: '2024-01-01T00:00:00Z',
       lastSensorValueAt: new Date().toISOString()
     }
@@ -91,14 +91,14 @@ class SensorsService {
 AirCO2: Math.round(400 + Math.random() * 200),
       AirVPD: 0.8 + Math.random() * 0.6,
       SensorType: 8,
-      SoilTemp: (20 + Math.random() * 10).toString(),
-      BulkEC: soilType !== 'soil' ? (1.2 + Math.random() * 0.8).toString() : undefined,
-      VWCRock: soilType === 'stone' ? (60 + Math.random() * 30).toString() : undefined,
-      VWC: soilType === 'soil' ? (40 + Math.random() * 25).toString() : undefined,
-      VWCCoco: soilType === 'coconut' ? (55 + Math.random() * 25).toString() : undefined,
-      PoreEC: (0.8 + Math.random() * 0.6).toString(),
-      LeafWetness: (20 + Math.random() * 40).toString(),
-      LeafTemp: (21 + Math.random() * 6).toString(),
+      SoilTemp: 20 + Math.random() * 10,
+      BulkEC: soilType !== 'soil' ? 1.2 + Math.random() * 0.8 : undefined,
+VWCRock: soilType === 'stone' ? 60 + Math.random() * 30 : undefined,
+VWC: soilType === 'soil' ? 40 + Math.random() * 25 : undefined,
+VWCCoco: soilType === 'coconut' ? 55 + Math.random() * 25 : undefined,
+PoreEC: 0.8 + Math.random() * 0.6,
+LeafWetness: 20 + Math.random() * 40,
+LeafTemp: 21 + Math.random() * 6,
       VWC_CHANNEL_0: Math.random() > 0.5 ? 45 + Math.random() * 20 : null,
       VWC_CHANNEL_1: Math.random() > 0.5 ? 50 + Math.random() * 20 : null,
     };
