@@ -2,6 +2,7 @@
 
 import LoginForm from "@components/auth/LoginForm";
 import { Suspense } from "react";
+import "../../globals.css";
 import Image from "next/image";
 
 export default function LoginPage() {
