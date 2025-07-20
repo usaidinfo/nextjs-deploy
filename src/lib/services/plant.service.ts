@@ -113,8 +113,10 @@ class PlantService {
       };
     }
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async createPlant(locationId: number, plantName: string, _soilType: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {

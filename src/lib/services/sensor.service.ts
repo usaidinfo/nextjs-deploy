@@ -151,8 +151,9 @@ AirCO2: Math.round(400 + Math.random() * 200),
       };
     }
   }
-
-async getSensorValues(sn: string, startDate?: Date, endDate?: Date, _locationId?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getSensorValues(sn: string, startDate?: Date, endDate?: Date, locationId?: string) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -231,8 +232,9 @@ async getSensorValues(sn: string, startDate?: Date, endDate?: Date, _locationId?
       };
     }
   }
-  
-async addAddonSensor(_data: { sn: string; addonsensorsn: string }) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async addAddonSensor(data: { sn: string; addonsensorsn: string }) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     try {
       const token = localStorage.getItem('token');
       if (!token) {
